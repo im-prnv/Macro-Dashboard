@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Macro Flow Dashboard</title>
+<title>Macro Dashboard</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -52,7 +52,16 @@ tailwind.config = { darkMode: 'class' }
 <!-- HEADER -->
 <header class="flex justify-between p-4 bg-gray-200 dark:bg-gray-800">
   <div>
-    <h1 class="text-xl font-semibold">📊 Macro Flow Dashboard</h1>
+            <div class="flex items-center gap-3">
+  <img src="logo.png"
+       alt="Macro Dashboard Logo"
+       class="h-8 w-8 object-contain" />
+
+  <h1 class="text-xl font-semibold">
+    Macro Dashboard
+  </h1>
+</div>
+
     <div id="lastUpdated" class="text-xs opacity-70 mt-1">
       Last updated: --
     </div>
