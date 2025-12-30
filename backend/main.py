@@ -6,6 +6,32 @@ from pathlib import Path
 import feedparser
 from datetime import datetime
 from fastapi import HTTPException, Query
+import time
+from functools import wraps
+
+
+        # Simple in-memory cache
+CACHE = {}
+
+def ttl_cache(ttl_seconds: int):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            key = func.__name__ + str(args) + str(kwargs)
+            now = time.time()
+
+            if key in CACHE:
+                cached_time, cached_value = CACHE[key]
+                if now - cached_time < ttl_seconds:
+                    return cached_value
+
+            result = func(*args, **kwargs)
+            CACHE[key] = (now, result)
+            return result
+
+        return wrapper
+    return decorator
+
 
 app = FastAPI()
 
@@ -49,26 +75,31 @@ def health():
 
 # ---------------- MACRO ----------------
 @app.get("/dxy")
+@ttl_cache(300)  # 5 minutes
 def dxy():
     v, p = fetch_1d_change(["DX-Y.NYB", "DXY", "USDX"])
     return {"dxy": v, "pct_change": p}
 
 @app.get("/usd-jpy")
+@ttl_cache(300)  # 5 minutes
 def usd_jpy():
     v, p = fetch_1d_change(["JPY=X"])
     return {"usd_jpy": v, "pct_change": p}
 
 @app.get("/usd-inr")
+@ttl_cache(300)  # 5 minutes
 def usd_inr():
     v, p = fetch_1d_change(["INR=X"])
     return {"price": v, "pct_change": p}
 
 @app.get("/crude")
+@ttl_cache(300)  # 5 minutes
 def crude():
     v, p = fetch_1d_change(["BZ=F"])
     return {"price": v, "pct_change": p}
 
 @app.get("/us-yields")
+@ttl_cache(600)  # 5 minutes
 def us_yields():
     y10, y10p = fetch_1d_change(["^TNX"])
     y2, y2p = fetch_1d_change(["^IRX"])
@@ -101,6 +132,7 @@ def fii_dii():
 #----------------Market News----------------
 
 @app.get("/news")
+@ttl_cache(600)
 def market_news(region: str = Query("global", enum=["global", "india"])):
     if region == "india":
         FEED_URL = (
