@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Macro Dashboard</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { darkMode: 'class' }
+</script>
+
+<style>
+.card {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border-left-width: 4px;
+  background-color: white;
+}
+.dark .card { background-color: #1f2937; }
+
+.tip-trigger {
+  cursor: pointer;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+.tooltip {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.5rem;
+  max-width: min(260px, 90vw);
+  background: #111827;
+  color: white;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  display: none;
+  z-index: 50;
+}
+@media (hover:hover) {
+  .tip-trigger:hover + .tooltip { display:block; }
+}
+</style>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+
+<!-- HEADER -->
+<header class="flex justify-between p-4 bg-gray-200 dark:bg-gray-800">
+  <div>
+            <div class="flex items-center gap-3">
+  <img src="logo.png"
+       alt="Macro Dashboard Logo"
+       class="h-8 w-8 object-contain" />
+
+  <h1 class="text-xl font-semibold">
+    Macro Dashboard
+  </h1>
+</div>
+
+    <div id="lastUpdated" class="text-xs opacity-70 mt-1">
+      Last updated: --
+    </div>
+  </div>
+  <div class="space-x-2">
+    <button id="refreshBtn" class="bg-blue-600 text-white px-3 py-1 rounded">
+      🔄 Refresh
+    </button>
+    <button id="themeToggle" class="bg-gray-300 dark:bg-gray-700 px-3 py-1 rounded">
+      🌙
+    </button>
+  </div>
+</header>
+
+<!-- MARKET CLIMATE -->
+<section id="climateBanner"
+  class="m-4 p-4 rounded-xl text-center font-semibold text-lg">
+  Market Climate: --
+</section>
+
+<main class="p-4 space-y-10">
+
+<!-- ===== MACRO CARDS ===== -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
+
+  <div id="dxyCard" class="card">
+    <div>
+      DXY <span class="tip-trigger">➜</span>
+      <div class="tooltip">Shows US dollar strength. A very strong dollar can pull money away from global and Indian markets</div>
+    </div>
+    <div class="text-right">
+      <div id="dxy">--</div>
+      <div id="dxyPct" class="text-sm opacity-70"></div>
+    </div>
+  </div>
+
+  <div id="jpyCard" class="card">
+    <div>
+      USD / JPY <span class="tip-trigger">➜</span>
+      <div class="tooltip">A global risk sentiment gauge. Falling USD/JPY often signals risk-off behavior</div>
+    </div>
+    <div class="text-right">
+      <div id="usdjpy">--</div>
+      <div id="usdjpyPct" class="text-sm opacity-70"></div>
+    </div>
+  </div>
+
+  <div id="inrCard" class="card">
+    <div>
+      USD / INR <span class="tip-trigger">➜</span>
+      <div class="tooltip">Measures pressure on the Indian rupee. Sudden daily rises indicate macro stress.
+</div>
+    </div>
+    <div class="text-right">
+      <div id="usdinr">--</div>
+      <div id="usdinrPct" class="text-sm opacity-70"></div>
+    </div>
+  </div>
+
+  <div id="crudeCard" class="card">
+    <div>
+      Brent <span class="tip-trigger">➜</span>
+      <div class="tooltip">India imports oil. Sharp crude spikes raise inflation and hurt currency stability</div>
+    </div>
+    <div class="text-right">
+      <div id="crude">--</div>
+      <div id="crudePct" class="text-sm opacity-70"></div>
+    </div>
+  </div>
+
+  <div id="us10yCard" class="card">
+    <div>
+      US 10Y <span class="tip-trigger">➜</span>
+      <div class="tooltip">Long-term US interest rate. Higher yields pressure global equities.
+</div>
+    </div>
+    <div class="text-right">
+      <div id="us10y">--</div>
+      <div id="us10yPct" class="text-sm opacity-70"></div>
+    </div>
+  </div>
+
+  <div id="us2yCard" class="card">
+    <div>
+      US 2Y <span class="tip-trigger">➜</span>
+      <div class="tooltip">Reflects Federal Reserve policy expectations and liquidity conditions.</div>
+    </div>
+    <div class="text-right">
+      <div id="us2y">--</div>
+      <div id="us2yPct" class="text-sm opacity-70"></div>
+    </div>
+  </div>
+
+  <div id="spreadCard" class="card">
+    <div>
+      Yield Spread <span class="tip-trigger">➜</span>
+      <div class="tooltip">Difference between 10Y and 2Y yields. Inversion warns of future slowdown.</div>
+    </div>
+    <div class="text-right">
+      <div id="spread">--</div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ===== NEWS SECTION ===== -->
+<section class="m-4 mt-10">
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="text-lg font-semibold">📰 Market News</h2>
+
+    <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1 text-xs">
+      <button id="globalNewsBtn"
+        class="px-3 py-1 rounded-md bg-blue-600 text-white">
+        Global
+      </button>
+      <button id="indiaNewsBtn"
+        class="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200">
+        India
+      </button>
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+    <div id="newsList"
+      class="max-h-96 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+      <div class="p-3 opacity-60">Loading news…</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+const API = "https://macro-dashboard-backend-3nnl.onrender.com";
+const $ = id => document.getElementById(id);
+const setColor = (el,color)=>{ if(el) el.style.borderLeftColor=color };
+
+// THEME
+const themeToggle=$("themeToggle");
+const saved=localStorage.getItem("theme");
+if(saved==="light"){document.documentElement.classList.remove("dark");themeToggle.innerText="☀️";}
+else{document.documentElement.classList.add("dark");themeToggle.innerText="🌙";}
+themeToggle.onclick=()=>{
+  const d=document.documentElement.classList.contains("dark");
+  document.documentElement.classList.toggle("dark");
+  localStorage.setItem("theme",d?"light":"dark");
+  themeToggle.innerText=d?"☀️":"🌙";
+};
+
+// FETCH
+async function j(p){
+  const r=await fetch(API+p);
+  return r.ok?r.json():null;
+}
+
+// ===== NEWS =====
+let currentNewsRegion="global";
+
+async function loadNews(region="global"){
+  currentNewsRegion=region;
+  const box=$("newsList");
+  box.innerHTML="<div class='p-3 opacity-60'>Loading news…</div>";
+
+  try{
+    const res=await fetch(`${API}/news?region=${region}`);
+    const data=await res.json();
+    box.innerHTML="";
+
+    data.items.forEach(n=>{
+      const div=document.createElement("div");
+      div.className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition";
+      div.innerHTML=`
+        <a href="${n.link}" target="_blank" class="block font-medium">
+          ${n.title}
+        </a>
+        <div class="text-xs opacity-60 mt-1">
+          ${data.source} • ${n.published||""}
+        </div>`;
+      box.appendChild(div);
+    });
+  }catch{
+    box.innerHTML="<div class='p-3 text-red-500'>Failed to load news</div>";
+  }
+}
+
+globalNewsBtn.onclick=()=>{
+  globalNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
+  indiaNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";
+  loadNews("global");
+};
+indiaNewsBtn.onclick=()=>{
+  indiaNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
+  globalNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";
+  loadNews("india");
+};
+
+// ===== MACRO LOAD =====
+async function load(){
+  const dxy=await j("/dxy");
+  const jpy=await j("/usd-jpy");
+  const inr=await j("/usd-inr");
+  const crude=await j("/crude");
+  const y=await j("/us-yields");
+  if(!dxy||!jpy||!inr||!crude||!y) return;
+
+  $("dxy").innerText=dxy.dxy;
+  $("dxyPct").innerText=dxy.pct_change+"%";
+  setColor(dxyCard,dxy.dxy>100.5?"red":dxy.dxy>=99.5?"orange":"green");
+
+  $("usdjpy").innerText=jpy.usd_jpy;
+  $("usdjpyPct").innerText=jpy.pct_change+"%";
+  setColor(jpyCard,jpy.usd_jpy<148?"red":jpy.usd_jpy<=150?"orange":"green");
+
+  $("usdinr").innerText=inr.price;
+  $("usdinrPct").innerText=inr.pct_change+"%";
+  setColor(inrCard,inr.pct_change>0.5?"red":inr.pct_change>=0.2?"orange":"green");
+
+  $("crude").innerText=crude.price;
+  $("crudePct").innerText=crude.pct_change+"%";
+  setColor(crudeCard,crude.pct_change>2.5?"red":crude.pct_change>=1?"orange":"green");
+
+  $("us10y").innerText=y.us_10y;
+  $("us10yPct").innerText=y.us_10y_pct+"%";
+  setColor(us10yCard,y.us_10y>4.1?"red":y.us_10y>=3.9?"orange":"green");
+
+  $("us2y").innerText=y.us_2y;
+  $("us2yPct").innerText=y.us_2y_pct+"%";
+  setColor(us2yCard,y.us_2y>4.2?"red":y.us_2y>=4.0?"orange":"green");
+
+  $("spread").innerText=y.yield_spread;
+  setColor(spreadCard,y.yield_spread<0?"red":y.yield_spread<=0.5?"orange":"green");
+
+  let stress=0;
+  if(dxy.dxy>100.5)stress++;
+  if(jpy.usd_jpy<148)stress++;
+  if(inr.pct_change>0.5)stress++;
+  if(crude.pct_change>2.5)stress++;
+  if(y.us_10y>4.1)stress++;
+  if(y.us_2y>4.2)stress++;
+  if(y.yield_spread<0)stress++;
+
+  if(stress<=1){
+    climateBanner.innerText="🌤️ Market Climate: Favorable";
+    climateBanner.style.backgroundColor="#16a34a";
+    climateBanner.style.color="white";
+  }else if(stress<=3){
+    climateBanner.innerText="🌥️ Market Climate: Cautious";
+    climateBanner.style.backgroundColor="#facc15";
+    climateBanner.style.color="black";
+  }else{
+    climateBanner.innerText="🌩️ Market Climate: Stressed";
+    climateBanner.style.backgroundColor="#dc2626";
+    climateBanner.style.color="white";
+  }
+
+  $("lastUpdated").innerText="Last updated: "+new Date().toLocaleString();
+}
+
+refreshBtn.onclick=()=>{ load(); loadNews(currentNewsRegion); };
+
+load();
+loadNews("global");
+</script>
+
+</body>
+</html>
