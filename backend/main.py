@@ -168,43 +168,15 @@ def market_news(region: str = Query("global", enum=["global", "india"])):
 
 # ---------------- MARKET REGIME (FINAL FIX) ----------------
 @app.get("/market-regime")
-@ttl_cache(86400)  # once per day
 def market_regime():
-    try:
-        t = yf.Ticker("^NSEI")
-        df = t.history(period="max")
+    path = Path("backend/data/market_regime.json")
 
-        if df is None or df.empty or len(df) < 200:
-            return {
-                "trend_regime": "Unavailable",
-                "note": "Yahoo data unavailable"
-            }
+    # Always return file if it exists
+    if path.exists():
+        with open(path) as f:
+            return json.load(f)
 
-        df["EMA50"] = df["Close"].ewm(span=50, adjust=False).mean()
-        df["EMA200"] = df["Close"].ewm(span=200, adjust=False).mean()
-
-        close = round(float(df["Close"].iloc[-1]), 2)
-        ema50 = round(float(df["EMA50"].iloc[-1]), 2)
-        ema200 = round(float(df["EMA200"].iloc[-1]), 2)
-
-        if close > ema50 and ema50 > ema200:
-            regime = "Bullish"
-        elif close < ema50 and close > ema200:
-            regime = "Corrective"
-        else:
-            regime = "Bearish"
-
-        return {
-            "index": "NIFTY 50",
-            "trend_regime": regime,
-            "close": close,
-            "ema50": ema50,
-            "ema200": ema200,
-            "based_on": "Previous daily close"
-        }
-
-    except Exception as e:
-        return {
-            "trend_regime": "Unavailable",
-            "error": str(e)
-        }
+    return {
+        "trend_regime": "Unavailable",
+        "note": "Local cache missing"
+    }
