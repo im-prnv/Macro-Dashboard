@@ -69,9 +69,11 @@ def fetch_1d_change(symbols):
     return None, None
 
 # ---------------- HEALTH ----------------
-@app.get("/health")
+from fastapi import Response
+
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health():
-    return {"status": "Backend running"}
+    return Response(status_code=200)
 
 # ---------------- MACRO ----------------
 @app.get("/dxy")
