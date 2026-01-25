@@ -69,7 +69,7 @@ def fetch_1d_change(symbols):
     return None, None
 
 # ---------------- HEALTH ----------------
-@app.get("/")
+@app.get("/health")
 def health():
     return {"status": "Backend running"}
 
