@@ -178,7 +178,7 @@ def market_regime():
     try:
         df = yf.download(
             "^NSEI",
-            period="1y",
+            period="2y",
             interval="1d",
             progress=False,
             threads=False,
