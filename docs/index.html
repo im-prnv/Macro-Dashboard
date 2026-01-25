@@ -56,7 +56,9 @@ tailwind.config = { darkMode: 'class' }
       <img src="logo.png" class="h-8 w-8 object-contain" />
       <h1 class="text-xl font-semibold">Macro Dashboard</h1>
     </div>
-    <div id="lastUpdated" class="text-xs opacity-70 mt-1">Last updated: --</div>
+    <div id="lastUpdated" class="text-xs opacity-70 mt-1">
+      Last updated: --
+    </div>
   </div>
   <div class="space-x-2">
     <button id="refreshBtn" class="bg-blue-600 text-white px-3 py-1 rounded">🔄</button>
@@ -65,31 +67,23 @@ tailwind.config = { darkMode: 'class' }
 </header>
 
 <!-- MARKET CLIMATE -->
-<section id="climateBanner" class="m-4 p-4 rounded-xl text-center font-semibold text-lg">
+<section id="climateBanner"
+  class="m-4 p-4 rounded-xl text-center font-semibold text-lg">
   Market Climate: --
 </section>
 
-<!-- TREND REGIME -->
-<section class="m-4">
-  <div id="trendCard" class="card">
-    <div>
-      Trend Regime <span class="tip-trigger">➜</span>
-      <div class="tooltip">
-        <b>Bullish:</b> Price above 50 & 200 EMA. Trend supportive.<br><br>
-        <b>Corrective:</b> Price below 50 EMA but above 200 EMA. Pullback phase.<br><br>
-        <b>Bearish:</b> Price below 50 & 200 EMA. Downtrend risk.
-      </div>
-    </div>
-    <div class="text-right">
-      <div id="trendRegime">--</div>
-      <div class="text-xs opacity-70">Daily TF • Prev Close</div>
-    </div>
+<!-- TREND REGIME (BANNER STYLE) -->
+<section id="regimeBanner"
+  class="m-4 p-4 rounded-xl text-center font-semibold text-lg">
+  Trend Regime: --
+  <div class="text-xs opacity-70 mt-1">
+    Daily TF • Previous Close
   </div>
 </section>
 
 <main class="p-4 space-y-10">
 
-<!-- MACRO CARDS -->
+<!-- ===== MACRO CARDS ===== -->
 <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
 
   <div id="dxyCard" class="card">
@@ -162,12 +156,38 @@ tailwind.config = { darkMode: 'class' }
   </div>
 
 </section>
+
+<!-- ===== NEWS SECTION (RESTORED) ===== -->
+<section class="m-4 mt-10">
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="text-lg font-semibold">📰 Market News</h2>
+
+    <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1 text-xs">
+      <button id="globalNewsBtn"
+        class="px-3 py-1 rounded-md bg-blue-600 text-white">
+        Global
+      </button>
+      <button id="indiaNewsBtn"
+        class="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200">
+        India
+      </button>
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+    <div id="newsList"
+      class="max-h-96 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+      <div class="p-3 opacity-60">Loading news…</div>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <script>
 const API="https://macro-dashboard-vk03.onrender.com";
 const $=id=>document.getElementById(id);
-const setColor=(el,c)=>{if(el)el.style.borderLeftColor=c};
+const setColor=(el,c)=>{ if(el) el.style.borderLeftColor=c };
 
 // THEME
 const t=$("themeToggle");
@@ -188,24 +208,31 @@ async function j(p){
   }catch{return null;}
 }
 
-// TREND REGIME LOAD
-async function loadTrend(){
+// TREND REGIME BANNER
+async function loadRegime(){
   const d=await j("/market-regime");
   if(!d||!d.trend_regime){
-    $("trendRegime").innerText="Unavailable";
-    setColor(trendCard,"gray");
+    regimeBanner.innerText="Trend Regime: Unavailable";
+    regimeBanner.style.background="#374151";
     return;
   }
 
-  $("trendRegime").innerText=d.trend_regime;
-  setColor(
-    trendCard,
-    d.trend_regime==="Bullish"?"green":
-    d.trend_regime==="Corrective"?"orange":"red"
-  );
+  regimeBanner.innerHTML=`Trend Regime: ${d.trend_regime}
+    <div class="text-xs opacity-70 mt-1">Daily TF • Previous Close</div>`;
+
+  if(d.trend_regime==="Bullish"){
+    regimeBanner.style.background="#16a34a";
+    regimeBanner.style.color="white";
+  }else if(d.trend_regime==="Corrective"){
+    regimeBanner.style.background="#facc15";
+    regimeBanner.style.color="black";
+  }else{
+    regimeBanner.style.background="#dc2626";
+    regimeBanner.style.color="white";
+  }
 }
 
-// MACRO LOAD (unchanged logic)
+// MACRO + CLIMATE
 async function load(){
   const dxy=await j("/dxy");
   const jpy=await j("/usd-jpy");
@@ -267,9 +294,46 @@ async function load(){
   $("lastUpdated").innerText="Last updated: "+new Date().toLocaleString();
 }
 
-refreshBtn.onclick=()=>{load();loadTrend();};
+// NEWS
+let currentNewsRegion="global";
+async function loadNews(region="global"){
+  currentNewsRegion=region;
+  const box=$("newsList");
+  box.innerHTML="<div class='p-3 opacity-60'>Loading news…</div>";
+
+  try{
+    const r=await fetch(`${API}/news?region=${region}`);
+    const d=await r.json();
+    box.innerHTML="";
+    d.items.forEach(n=>{
+      const div=document.createElement("div");
+      div.className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700";
+      div.innerHTML=`
+        <a href="${n.link}" target="_blank" class="block font-medium">${n.title}</a>
+        <div class="text-xs opacity-60 mt-1">${d.source}</div>`;
+      box.appendChild(div);
+    });
+  }catch{
+    box.innerHTML="<div class='p-3 text-red-500'>Failed to load news</div>";
+  }
+}
+
+globalNewsBtn.onclick=()=>{
+  globalNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
+  indiaNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";
+  loadNews("global");
+};
+indiaNewsBtn.onclick=()=>{
+  indiaNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
+  globalNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";
+  loadNews("india");
+};
+
+refreshBtn.onclick=()=>{ load(); loadRegime(); loadNews(currentNewsRegion); };
+
 load();
-loadTrend();
+loadRegime();
+loadNews("global");
 </script>
 
 </body>
