@@ -11,18 +11,17 @@ tailwind.config = { darkMode: 'class' }
 </script>
 
 <style>
-.card {
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  border-left-width: 4px;
-  background-color: white;
+.card{
+  position:relative;
+  display:flex;
+  justify-content:space-between;
+  padding:1rem;
+  border-radius:.75rem;
+  border-left-width:4px;
+  background:#fff
 }
-.dark .card { background-color: #1f2937; }
-
-svg { max-width: 100%; height: auto; }
+.dark .card{background:#1f2937}
+svg{max-width:100%;height:auto}
 </style>
 </head>
 
@@ -32,7 +31,7 @@ svg { max-width: 100%; height: auto; }
 <header class="flex justify-between p-4 bg-gray-200 dark:bg-gray-800">
   <div>
     <div class="flex items-center gap-3">
-      <img src="logo.png" class="h-8 w-8 object-contain" />
+      <img src="logo.png" class="h-8 w-8 object-contain">
       <h1 class="text-xl font-semibold">Macro Dashboard</h1>
     </div>
     <div id="lastUpdated" class="text-xs opacity-70 mt-1">Last updated: --</div>
@@ -53,26 +52,27 @@ svg { max-width: 100%; height: auto; }
   <h2 class="font-semibold mb-2">Trend Regime</h2>
 
   <svg viewBox="0 0 200 110" class="mx-auto">
-    <!-- Zones -->
-    <path d="M10 100 A90 90 0 0 1 70 20" fill="none" stroke="#dc2626" stroke-width="14"/>
-    <path d="M70 20 A90 90 0 0 1 130 20" fill="none" stroke="#facc15" stroke-width="14"/>
-    <path d="M130 20 A90 90 0 0 1 190 100" fill="none" stroke="#16a34a" stroke-width="14"/>
+    <!-- zones -->
+    <path d="M10 100 A90 90 0 0 1 70 20" stroke="#dc2626" stroke-width="14" fill="none"/>
+    <path d="M70 20 A90 90 0 0 1 130 20" stroke="#facc15" stroke-width="14" fill="none"/>
+    <path d="M130 20 A90 90 0 0 1 190 100" stroke="#16a34a" stroke-width="14" fill="none"/>
 
-    <!-- Needle (VISIBLE FIX) -->
+    <!-- needle -->
     <line id="needle"
       x1="100" y1="100"
-      x2="100" y2="35"
-      stroke="#111827"
+      x2="100" y2="34"
+      stroke="#000"
       stroke-width="4"
       stroke-linecap="round"
-      transform-origin="100px 100px"
-      transform="rotate(-90 100 100)" />
+      transform-origin="100 100"
+      transform="rotate(-90 100 100)"
+    />
 
-    <circle cx="100" cy="100" r="6" fill="#111827"/>
+    <circle cx="100" cy="100" r="6" fill="#000"/>
   </svg>
 
   <div id="regimeText" class="font-semibold mt-2">--</div>
-  <div id="regimeUpdated" class="text-xs opacity-70">Based on previous close</div>
+  <div class="text-xs opacity-70">Daily • Previous Close</div>
 </section>
 
 <main class="p-4 space-y-10">
@@ -90,7 +90,7 @@ svg { max-width: 100%; height: auto; }
 
 </section>
 
-<!-- NEWS (GLOBAL + INDIA RESTORED) -->
+<!-- NEWS -->
 <section class="m-4 mt-10">
   <div class="flex justify-between items-center mb-3">
     <h2 class="text-lg font-semibold">📰 Market News</h2>
@@ -112,37 +112,31 @@ svg { max-width: 100%; height: auto; }
 <script>
 const API="https://macro-dashboard-vk03.onrender.com";
 const $=id=>document.getElementById(id);
-const setColor=(el,c)=>{ if(el) el.style.borderLeftColor=c };
+const setColor=(el,c)=>{if(el)el.style.borderLeftColor=c};
 
 // THEME
 const t=$("themeToggle");
 const s=localStorage.getItem("theme");
 if(s==="light"){document.documentElement.classList.remove("dark");t.innerText="☀️";}
 else{document.documentElement.classList.add("dark");t.innerText="🌙";}
-t.onclick=()=>{
-  const d=document.documentElement.classList.contains("dark");
-  document.documentElement.classList.toggle("dark");
-  localStorage.setItem("theme",d?"light":"dark");
-  t.innerText=d?"☀️":"🌙";
-};
+t.onclick=()=>{document.documentElement.classList.toggle("dark");};
 
+// fetch helper
 async function j(p){
-  try{ const r=await fetch(API+p); return r.ok?await r.json():null; }
-  catch{ return null; }
+  try{const r=await fetch(API+p);return r.ok?await r.json():null}catch{return null}
 }
 
 /* ===== REGIME ===== */
 async function loadRegime(){
   const d=await j("/market-regime");
-  if(!d||!d.close) return;
+  if(!d||!d.close)return;
 
-  const { close, ema50, ema200, trend_regime } = d;
-  let pos=(close-ema200)/(ema50-ema200);
-  pos=Math.max(-0.2,Math.min(1.2,pos));
-  const angle=-90+(pos*180);
+  const pos=(d.close-d.ema200)/(d.ema50-d.ema200);
+  const clamped=Math.max(-0.2,Math.min(1.2,pos));
+  const angle=-90+(clamped*180);
 
   $("needle").setAttribute("transform",`rotate(${angle} 100 100)`);
-  $("regimeText").innerText=trend_regime;
+  $("regimeText").innerText=d.trend_regime;
 }
 
 /* ===== MACRO + CLIMATE ===== */
@@ -152,23 +146,55 @@ async function load(){
   const inr=await j("/usd-inr");
   const crude=await j("/crude");
   const y=await j("/us-yields");
-  if(!dxy||!jpy||!inr||!crude||!y) return;
+  if(!dxy||!jpy||!inr||!crude||!y)return;
 
-  $("dxy").innerText=dxy.dxy; $("dxyPct").innerText=dxy.pct_change+"%";
+  $("dxy").innerText=dxy.dxy;
+  $("dxyPct").innerText=dxy.pct_change+"%";
   setColor(dxyCard,dxy.dxy>100.5?"red":dxy.dxy>=99.5?"orange":"green");
 
-  $("usdjpy").innerText=jpy.usd_jpy; $("usdjpyPct").innerText=jpy.pct_change+"%";
+  $("usdjpy").innerText=jpy.usd_jpy;
+  $("usdjpyPct").innerText=jpy.pct_change+"%";
   setColor(jpyCard,jpy.usd_jpy<148?"red":jpy.usd_jpy<=150?"orange":"green");
 
-  $("usdinr").innerText=inr.price; $("usdinrPct").innerText=inr.pct_change+"%";
+  $("usdinr").innerText=inr.price;
+  $("usdinrPct").innerText=inr.pct_change+"%";
   setColor(inrCard,inr.pct_change>0.5?"red":inr.pct_change>=0.2?"orange":"green");
 
-  $("crude").innerText=crude.price; $("crudePct").innerText=crude.pct_change+"%";
+  $("crude").innerText=crude.price;
+  $("crudePct").innerText=crude.pct_change+"%";
   setColor(crudeCard,crude.pct_change>2.5?"red":crude.pct_change>=1?"orange":"green");
 
-  $("us10y").innerText=y.us_10y; $("us10yPct").innerText=y.us_10y_pct+"%";
-  $("us2y").innerText=y.us_2y; $("us2yPct").innerText=y.us_2y_pct+"%";
+  $("us10y").innerText=y.us_10y;
+  $("us10yPct").innerText=y.us_10y_pct+"%";
+  setColor(us10yCard,y.us_10y>4.1?"red":y.us_10y>=3.9?"orange":"green");
+
+  $("us2y").innerText=y.us_2y;
+  $("us2yPct").innerText=y.us_2y_pct+"%";
+  setColor(us2yCard,y.us_2y>4.2?"red":y.us_2y>=4.0?"orange":"green");
+
   $("spread").innerText=y.yield_spread;
+  setColor(spreadCard,y.yield_spread<0?"red":y.yield_spread<=0.5?"orange":"green");
+
+  // market climate
+  let stress=0;
+  if(dxy.dxy>100.5)stress++;
+  if(jpy.usd_jpy<148)stress++;
+  if(inr.pct_change>0.5)stress++;
+  if(crude.pct_change>2.5)stress++;
+  if(y.us_10y>4.1)stress++;
+  if(y.us_2y>4.2)stress++;
+  if(y.yield_spread<0)stress++;
+
+  if(stress<=1){
+    climateBanner.innerText="🌤️ Market Climate: Favorable";
+    climateBanner.style.background="#16a34a";climateBanner.style.color="white";
+  }else if(stress<=3){
+    climateBanner.innerText="🌥️ Market Climate: Cautious";
+    climateBanner.style.background="#facc15";climateBanner.style.color="black";
+  }else{
+    climateBanner.innerText="🌩️ Market Climate: Stressed";
+    climateBanner.style.background="#dc2626";climateBanner.style.color="white";
+  }
 
   $("lastUpdated").innerText="Last updated: "+new Date().toLocaleString();
 }
@@ -179,7 +205,6 @@ async function loadNews(region){
   currentNews=region;
   const box=$("newsList");
   box.innerHTML="<div class='p-3 opacity-60'>Loading news…</div>";
-
   try{
     const r=await fetch(`${API}/news?region=${region}`);
     const d=await r.json();
@@ -206,7 +231,7 @@ indiaNewsBtn.onclick=()=>{
   loadNews("india");
 };
 
-refreshBtn.onclick=()=>{ load(); loadRegime(); loadNews(currentNews); };
+refreshBtn.onclick=()=>{load();loadRegime();loadNews(currentNews)};
 
 load();
 loadRegime();
