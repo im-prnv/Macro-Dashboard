@@ -53,35 +53,33 @@ svg { max-width: 100%; height: auto; }
   <h2 class="font-semibold mb-2">Trend Regime</h2>
 
   <svg viewBox="0 0 200 110" class="mx-auto">
-    <!-- Red zone -->
+    <!-- Zones -->
     <path d="M10 100 A90 90 0 0 1 70 20" fill="none" stroke="#dc2626" stroke-width="14"/>
-    <!-- Yellow zone -->
     <path d="M70 20 A90 90 0 0 1 130 20" fill="none" stroke="#facc15" stroke-width="14"/>
-    <!-- Green zone -->
     <path d="M130 20 A90 90 0 0 1 190 100" fill="none" stroke="#16a34a" stroke-width="14"/>
 
-    <!-- Needle -->
+    <!-- Needle (VISIBLE FIX) -->
     <line id="needle"
-          x1="100" y1="100"
-          x2="100" y2="30"
-          stroke="black"
-          stroke-width="3"
-          stroke-linecap="round"
-          transform-origin="100px 100px"
-          transform="rotate(-90 100 100)" />
+      x1="100" y1="100"
+      x2="100" y2="35"
+      stroke="#111827"
+      stroke-width="4"
+      stroke-linecap="round"
+      transform-origin="100px 100px"
+      transform="rotate(-90 100 100)" />
 
-    <!-- Center dot -->
-    <circle cx="100" cy="100" r="5" fill="black"/>
+    <circle cx="100" cy="100" r="6" fill="#111827"/>
   </svg>
 
   <div id="regimeText" class="font-semibold mt-2">--</div>
-  <div id="regimeUpdated" class="text-xs opacity-70">--</div>
+  <div id="regimeUpdated" class="text-xs opacity-70">Based on previous close</div>
 </section>
 
 <main class="p-4 space-y-10">
 
 <!-- MACRO CARDS -->
 <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
+
   <div id="dxyCard" class="card"><div>DXY</div><div><div id="dxy">--</div><div id="dxyPct" class="text-sm opacity-70"></div></div></div>
   <div id="jpyCard" class="card"><div>USD / JPY</div><div><div id="usdjpy">--</div><div id="usdjpyPct" class="text-sm opacity-70"></div></div></div>
   <div id="inrCard" class="card"><div>USD / INR</div><div><div id="usdinr">--</div><div id="usdinrPct" class="text-sm opacity-70"></div></div></div>
@@ -89,11 +87,19 @@ svg { max-width: 100%; height: auto; }
   <div id="us10yCard" class="card"><div>US 10Y</div><div><div id="us10y">--</div><div id="us10yPct" class="text-sm opacity-70"></div></div></div>
   <div id="us2yCard" class="card"><div>US 2Y</div><div><div id="us2y">--</div><div id="us2yPct" class="text-sm opacity-70"></div></div></div>
   <div id="spreadCard" class="card"><div>Yield Spread</div><div><div id="spread">--</div></div></div>
+
 </section>
 
-<!-- NEWS -->
+<!-- NEWS (GLOBAL + INDIA RESTORED) -->
 <section class="m-4 mt-10">
-  <h2 class="text-lg font-semibold mb-3">📰 Market News</h2>
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="text-lg font-semibold">📰 Market News</h2>
+    <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1 text-xs">
+      <button id="globalNewsBtn" class="px-3 py-1 rounded-md bg-blue-600 text-white">Global</button>
+      <button id="indiaNewsBtn" class="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200">India</button>
+    </div>
+  </div>
+
   <div class="rounded-xl border bg-white dark:bg-gray-800">
     <div id="newsList" class="max-h-96 overflow-y-auto divide-y text-sm">
       <div class="p-3 opacity-60">Loading news…</div>
@@ -106,6 +112,7 @@ svg { max-width: 100%; height: auto; }
 <script>
 const API="https://macro-dashboard-vk03.onrender.com";
 const $=id=>document.getElementById(id);
+const setColor=(el,c)=>{ if(el) el.style.borderLeftColor=c };
 
 // THEME
 const t=$("themeToggle");
@@ -120,40 +127,61 @@ t.onclick=()=>{
 };
 
 async function j(p){
-  try{
-    const r=await fetch(API+p);
-    return r.ok?await r.json():null;
-  }catch{return null;}
+  try{ const r=await fetch(API+p); return r.ok?await r.json():null; }
+  catch{ return null; }
 }
 
-// SPEEDOMETER LOGIC
+/* ===== REGIME ===== */
 async function loadRegime(){
   const d=await j("/market-regime");
-  if(!d||!d.close){ return; }
+  if(!d||!d.close) return;
 
   const { close, ema50, ema200, trend_regime } = d;
+  let pos=(close-ema200)/(ema50-ema200);
+  pos=Math.max(-0.2,Math.min(1.2,pos));
+  const angle=-90+(pos*180);
 
-  // Normalize position between EMA200 and EMA50
-  let pos = (close - ema200) / (ema50 - ema200);
-  pos = Math.max(-0.2, Math.min(1.2, pos)); // clamp
-
-  // Map to angle (-90 to +90)
-  const angle = -90 + pos * 180;
-
-  $("needle").setAttribute(
-    "transform",
-    `rotate(${angle} 100 100)`
-  );
-
-  $("regimeText").innerText = trend_regime;
-  $("regimeUpdated").innerText = "Based on previous close";
+  $("needle").setAttribute("transform",`rotate(${angle} 100 100)`);
+  $("regimeText").innerText=trend_regime;
 }
 
-// NEWS
-async function loadNews(){
+/* ===== MACRO + CLIMATE ===== */
+async function load(){
+  const dxy=await j("/dxy");
+  const jpy=await j("/usd-jpy");
+  const inr=await j("/usd-inr");
+  const crude=await j("/crude");
+  const y=await j("/us-yields");
+  if(!dxy||!jpy||!inr||!crude||!y) return;
+
+  $("dxy").innerText=dxy.dxy; $("dxyPct").innerText=dxy.pct_change+"%";
+  setColor(dxyCard,dxy.dxy>100.5?"red":dxy.dxy>=99.5?"orange":"green");
+
+  $("usdjpy").innerText=jpy.usd_jpy; $("usdjpyPct").innerText=jpy.pct_change+"%";
+  setColor(jpyCard,jpy.usd_jpy<148?"red":jpy.usd_jpy<=150?"orange":"green");
+
+  $("usdinr").innerText=inr.price; $("usdinrPct").innerText=inr.pct_change+"%";
+  setColor(inrCard,inr.pct_change>0.5?"red":inr.pct_change>=0.2?"orange":"green");
+
+  $("crude").innerText=crude.price; $("crudePct").innerText=crude.pct_change+"%";
+  setColor(crudeCard,crude.pct_change>2.5?"red":crude.pct_change>=1?"orange":"green");
+
+  $("us10y").innerText=y.us_10y; $("us10yPct").innerText=y.us_10y_pct+"%";
+  $("us2y").innerText=y.us_2y; $("us2yPct").innerText=y.us_2y_pct+"%";
+  $("spread").innerText=y.yield_spread;
+
+  $("lastUpdated").innerText="Last updated: "+new Date().toLocaleString();
+}
+
+/* ===== NEWS ===== */
+let currentNews="global";
+async function loadNews(region){
+  currentNews=region;
   const box=$("newsList");
+  box.innerHTML="<div class='p-3 opacity-60'>Loading news…</div>";
+
   try{
-    const r=await fetch(`${API}/news?region=global`);
+    const r=await fetch(`${API}/news?region=${region}`);
     const d=await r.json();
     box.innerHTML="";
     d.items.forEach(n=>{
@@ -167,8 +195,22 @@ async function loadNews(){
   }
 }
 
+globalNewsBtn.onclick=()=>{
+  globalNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
+  indiaNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";
+  loadNews("global");
+};
+indiaNewsBtn.onclick=()=>{
+  indiaNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
+  globalNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";
+  loadNews("india");
+};
+
+refreshBtn.onclick=()=>{ load(); loadRegime(); loadNews(currentNews); };
+
+load();
 loadRegime();
-loadNews();
+loadNews("global");
 </script>
 
 </body>
