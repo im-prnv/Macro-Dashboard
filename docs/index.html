@@ -134,6 +134,13 @@ async function loadTrend(){
   $("trendRegime").innerText = d.trend_regime;
   $("trendNote").innerText = "Daily TF • Prev Close";
 
+  if(d.trend_regime === "Unavailable" || d.trend_regime === "Error"){
+  $("trendRegime").innerText = "Data issue";
+  setColor(trendCard, "gray");
+  return;
+  }
+
+
   if(d.trend_regime === "Bullish"){
     setColor(trendCard, "green");
   }else if(d.trend_regime === "Corrective"){
