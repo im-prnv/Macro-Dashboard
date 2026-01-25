@@ -1,6 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import HTTPException, Query, Response
 import yfinance as yf
 import json
 from pathlib import Path
@@ -9,7 +8,6 @@ from datetime import datetime
 import time
 from functools import wraps
 import pandas as pd
-
 
 # ---------------- CACHE ----------------
 CACHE = {}
@@ -69,7 +67,6 @@ def fetch_1d_change(symbols):
 
     return None, None
 
-
 # ---------------- MACRO ----------------
 @app.get("/dxy")
 @ttl_cache(300)
@@ -77,13 +74,11 @@ def dxy():
     v, p = fetch_1d_change(["DX-Y.NYB", "DXY", "USDX"])
     return {"dxy": v, "pct_change": p}
 
-
 @app.get("/usd-jpy")
 @ttl_cache(300)
 def usd_jpy():
     v, p = fetch_1d_change(["JPY=X"])
     return {"usd_jpy": v, "pct_change": p}
-
 
 @app.get("/usd-inr")
 @ttl_cache(300)
@@ -91,13 +86,11 @@ def usd_inr():
     v, p = fetch_1d_change(["INR=X"])
     return {"price": v, "pct_change": p}
 
-
 @app.get("/crude")
 @ttl_cache(300)
 def crude():
     v, p = fetch_1d_change(["BZ=F"])
     return {"price": v, "pct_change": p}
-
 
 @app.get("/us-yields")
 @ttl_cache(600)
@@ -122,14 +115,12 @@ def us_yields():
         "yield_spread": round(y10 - y2, 2)
     }
 
-
 # ---------------- FII / DII ----------------
 @app.get("/fii-dii")
 def fii_dii():
     path = Path("backend/data/fii_dii.json")
     with open(path) as f:
         return json.load(f)
-
 
 # ---------------- NEWS ----------------
 @app.get("/news")
@@ -153,7 +144,12 @@ def market_news(region: str = Query("global", enum=["global", "india"])):
     feed = feedparser.parse(FEED_URL)
 
     if not feed.entries:
-        raise HTTPException(status_code=502, detail="News feed unavailable")
+        return {
+            "source": source,
+            "region": region,
+            "updated": datetime.utcnow().isoformat(),
+            "items": []
+        }
 
     items = []
     for entry in feed.entries[:15]:
@@ -170,25 +166,18 @@ def market_news(region: str = Query("global", enum=["global", "india"])):
         "items": items
     }
 
-
-# ---------------- MARKET REGIME (NEW) ----------------
+# ---------------- MARKET REGIME (FINAL FIX) ----------------
 @app.get("/market-regime")
 @ttl_cache(86400)  # once per day
 def market_regime():
     try:
-        df = yf.download(
-            "^NSEI",
-            period="2y",
-            interval="1d",
-            progress=False,
-            threads=False,
-            auto_adjust=False
-        )
+        t = yf.Ticker("^NSEI")
+        df = t.history(period="max")
 
         if df is None or df.empty or len(df) < 200:
             return {
                 "trend_regime": "Unavailable",
-                "note": "Insufficient data"
+                "note": "Yahoo data unavailable"
             }
 
         df["EMA50"] = df["Close"].ewm(span=50, adjust=False).mean()
@@ -215,9 +204,7 @@ def market_regime():
         }
 
     except Exception as e:
-        # NEVER crash frontend
         return {
-            "trend_regime": "Error",
+            "trend_regime": "Unavailable",
             "error": str(e)
         }
-
