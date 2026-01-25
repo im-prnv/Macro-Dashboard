@@ -176,10 +176,20 @@ def market_news(region: str = Query("global", enum=["global", "india"])):
 @ttl_cache(86400)  # once per day
 def market_regime():
     try:
-        df = yf.download("^NSEI", period="1y", interval="1d")
+        df = yf.download(
+            "^NSEI",
+            period="1y",
+            interval="1d",
+            progress=False,
+            threads=False,
+            auto_adjust=False
+        )
 
-        if df.empty or len(df) < 200:
-            raise HTTPException(status_code=502, detail="Insufficient data")
+        if df is None or df.empty or len(df) < 200:
+            return {
+                "trend_regime": "Unavailable",
+                "note": "Insufficient data"
+            }
 
         df["EMA50"] = df["Close"].ewm(span=50, adjust=False).mean()
         df["EMA200"] = df["Close"].ewm(span=200, adjust=False).mean()
@@ -190,23 +200,24 @@ def market_regime():
 
         if close > ema50 and ema50 > ema200:
             regime = "Bullish"
-            trade_bias = "Aggressive Long"
         elif close < ema50 and close > ema200:
             regime = "Corrective"
-            trade_bias = "Defensive"
         else:
             regime = "Bearish"
-            trade_bias = "Capital Protection"
 
         return {
             "index": "NIFTY 50",
+            "trend_regime": regime,
             "close": close,
             "ema50": ema50,
             "ema200": ema200,
-            "trend_regime": regime,
-            "trade_bias": trade_bias,
             "based_on": "Previous daily close"
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # NEVER crash frontend
+        return {
+            "trend_regime": "Error",
+            "error": str(e)
+        }
+
