@@ -22,28 +22,7 @@ tailwind.config = { darkMode: 'class' }
 }
 .dark .card { background-color: #1f2937; }
 
-.tip-trigger {
-  cursor: pointer;
-  font-size: 0.9rem;
-  opacity: 0.7;
-}
-.tooltip {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 0.5rem;
-  max-width: min(260px, 90vw);
-  background: #111827;
-  color: white;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.75rem;
-  display: none;
-  z-index: 50;
-}
-@media (hover:hover) {
-  .tip-trigger:hover + .tooltip { display:block; }
-}
+svg { max-width: 100%; height: auto; }
 </style>
 </head>
 
@@ -56,9 +35,7 @@ tailwind.config = { darkMode: 'class' }
       <img src="logo.png" class="h-8 w-8 object-contain" />
       <h1 class="text-xl font-semibold">Macro Dashboard</h1>
     </div>
-    <div id="lastUpdated" class="text-xs opacity-70 mt-1">
-      Last updated: --
-    </div>
+    <div id="lastUpdated" class="text-xs opacity-70 mt-1">Last updated: --</div>
   </div>
   <div class="space-x-2">
     <button id="refreshBtn" class="bg-blue-600 text-white px-3 py-1 rounded">🔄</button>
@@ -67,116 +44,58 @@ tailwind.config = { darkMode: 'class' }
 </header>
 
 <!-- MARKET CLIMATE -->
-<section id="climateBanner"
-  class="m-4 p-4 rounded-xl text-center font-semibold text-lg">
+<section id="climateBanner" class="m-4 p-4 rounded-xl text-center font-semibold text-lg">
   Market Climate: --
 </section>
 
-<!-- TREND REGIME (BANNER STYLE) -->
-<section id="regimeBanner"
-  class="m-4 p-4 rounded-xl text-center font-semibold text-lg">
-  Trend Regime: --
-  <div class="text-xs opacity-70 mt-1">
-    Daily TF • Previous Close
-  </div>
+<!-- SPEEDOMETER REGIME -->
+<section class="m-4 p-4 rounded-xl bg-white dark:bg-gray-800 text-center">
+  <h2 class="font-semibold mb-2">Trend Regime</h2>
+
+  <svg viewBox="0 0 200 110" class="mx-auto">
+    <!-- Red zone -->
+    <path d="M10 100 A90 90 0 0 1 70 20" fill="none" stroke="#dc2626" stroke-width="14"/>
+    <!-- Yellow zone -->
+    <path d="M70 20 A90 90 0 0 1 130 20" fill="none" stroke="#facc15" stroke-width="14"/>
+    <!-- Green zone -->
+    <path d="M130 20 A90 90 0 0 1 190 100" fill="none" stroke="#16a34a" stroke-width="14"/>
+
+    <!-- Needle -->
+    <line id="needle"
+          x1="100" y1="100"
+          x2="100" y2="30"
+          stroke="black"
+          stroke-width="3"
+          stroke-linecap="round"
+          transform-origin="100px 100px"
+          transform="rotate(-90 100 100)" />
+
+    <!-- Center dot -->
+    <circle cx="100" cy="100" r="5" fill="black"/>
+  </svg>
+
+  <div id="regimeText" class="font-semibold mt-2">--</div>
+  <div id="regimeUpdated" class="text-xs opacity-70">--</div>
 </section>
 
 <main class="p-4 space-y-10">
 
-<!-- ===== MACRO CARDS ===== -->
+<!-- MACRO CARDS -->
 <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
-
-  <div id="dxyCard" class="card">
-    <div>DXY <span class="tip-trigger">➜</span>
-      <div class="tooltip">Shows US dollar strength.</div>
-    </div>
-    <div class="text-right">
-      <div id="dxy">--</div>
-      <div id="dxyPct" class="text-sm opacity-70"></div>
-    </div>
-  </div>
-
-  <div id="jpyCard" class="card">
-    <div>USD / JPY <span class="tip-trigger">➜</span>
-      <div class="tooltip">Global risk sentiment gauge.</div>
-    </div>
-    <div class="text-right">
-      <div id="usdjpy">--</div>
-      <div id="usdjpyPct" class="text-sm opacity-70"></div>
-    </div>
-  </div>
-
-  <div id="inrCard" class="card">
-    <div>USD / INR <span class="tip-trigger">➜</span>
-      <div class="tooltip">Pressure on Indian rupee.</div>
-    </div>
-    <div class="text-right">
-      <div id="usdinr">--</div>
-      <div id="usdinrPct" class="text-sm opacity-70"></div>
-    </div>
-  </div>
-
-  <div id="crudeCard" class="card">
-    <div>Brent <span class="tip-trigger">➜</span>
-      <div class="tooltip">Oil price impact on India.</div>
-    </div>
-    <div class="text-right">
-      <div id="crude">--</div>
-      <div id="crudePct" class="text-sm opacity-70"></div>
-    </div>
-  </div>
-
-  <div id="us10yCard" class="card">
-    <div>US 10Y <span class="tip-trigger">➜</span>
-      <div class="tooltip">Long-term US yields.</div>
-    </div>
-    <div class="text-right">
-      <div id="us10y">--</div>
-      <div id="us10yPct" class="text-sm opacity-70"></div>
-    </div>
-  </div>
-
-  <div id="us2yCard" class="card">
-    <div>US 2Y <span class="tip-trigger">➜</span>
-      <div class="tooltip">Fed policy expectations.</div>
-    </div>
-    <div class="text-right">
-      <div id="us2y">--</div>
-      <div id="us2yPct" class="text-sm opacity-70"></div>
-    </div>
-  </div>
-
-  <div id="spreadCard" class="card">
-    <div>Yield Spread <span class="tip-trigger">➜</span>
-      <div class="tooltip">10Y minus 2Y yield.</div>
-    </div>
-    <div class="text-right">
-      <div id="spread">--</div>
-    </div>
-  </div>
-
+  <div id="dxyCard" class="card"><div>DXY</div><div><div id="dxy">--</div><div id="dxyPct" class="text-sm opacity-70"></div></div></div>
+  <div id="jpyCard" class="card"><div>USD / JPY</div><div><div id="usdjpy">--</div><div id="usdjpyPct" class="text-sm opacity-70"></div></div></div>
+  <div id="inrCard" class="card"><div>USD / INR</div><div><div id="usdinr">--</div><div id="usdinrPct" class="text-sm opacity-70"></div></div></div>
+  <div id="crudeCard" class="card"><div>Brent</div><div><div id="crude">--</div><div id="crudePct" class="text-sm opacity-70"></div></div></div>
+  <div id="us10yCard" class="card"><div>US 10Y</div><div><div id="us10y">--</div><div id="us10yPct" class="text-sm opacity-70"></div></div></div>
+  <div id="us2yCard" class="card"><div>US 2Y</div><div><div id="us2y">--</div><div id="us2yPct" class="text-sm opacity-70"></div></div></div>
+  <div id="spreadCard" class="card"><div>Yield Spread</div><div><div id="spread">--</div></div></div>
 </section>
 
-<!-- ===== NEWS SECTION (RESTORED) ===== -->
+<!-- NEWS -->
 <section class="m-4 mt-10">
-  <div class="flex justify-between items-center mb-3">
-    <h2 class="text-lg font-semibold">📰 Market News</h2>
-
-    <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1 text-xs">
-      <button id="globalNewsBtn"
-        class="px-3 py-1 rounded-md bg-blue-600 text-white">
-        Global
-      </button>
-      <button id="indiaNewsBtn"
-        class="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200">
-        India
-      </button>
-    </div>
-  </div>
-
-  <div class="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
-    <div id="newsList"
-      class="max-h-96 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+  <h2 class="text-lg font-semibold mb-3">📰 Market News</h2>
+  <div class="rounded-xl border bg-white dark:bg-gray-800">
+    <div id="newsList" class="max-h-96 overflow-y-auto divide-y text-sm">
       <div class="p-3 opacity-60">Loading news…</div>
     </div>
   </div>
@@ -187,7 +106,6 @@ tailwind.config = { darkMode: 'class' }
 <script>
 const API="https://macro-dashboard-vk03.onrender.com";
 const $=id=>document.getElementById(id);
-const setColor=(el,c)=>{ if(el) el.style.borderLeftColor=c };
 
 // THEME
 const t=$("themeToggle");
@@ -208,109 +126,40 @@ async function j(p){
   }catch{return null;}
 }
 
-// TREND REGIME BANNER
+// SPEEDOMETER LOGIC
 async function loadRegime(){
   const d=await j("/market-regime");
-  if(!d||!d.trend_regime){
-    regimeBanner.innerText="Trend Regime: Unavailable";
-    regimeBanner.style.background="#374151";
-    return;
-  }
+  if(!d||!d.close){ return; }
 
-  regimeBanner.innerHTML=`Trend Regime: ${d.trend_regime}
-    <div class="text-xs opacity-70 mt-1">Daily TF • Previous Close</div>`;
+  const { close, ema50, ema200, trend_regime } = d;
 
-  if(d.trend_regime==="Bullish"){
-    regimeBanner.style.background="#16a34a";
-    regimeBanner.style.color="white";
-  }else if(d.trend_regime==="Corrective"){
-    regimeBanner.style.background="#facc15";
-    regimeBanner.style.color="black";
-  }else{
-    regimeBanner.style.background="#dc2626";
-    regimeBanner.style.color="white";
-  }
-}
+  // Normalize position between EMA200 and EMA50
+  let pos = (close - ema200) / (ema50 - ema200);
+  pos = Math.max(-0.2, Math.min(1.2, pos)); // clamp
 
-// MACRO + CLIMATE
-async function load(){
-  const dxy=await j("/dxy");
-  const jpy=await j("/usd-jpy");
-  const inr=await j("/usd-inr");
-  const crude=await j("/crude");
-  const y=await j("/us-yields");
-  if(!dxy||!jpy||!inr||!crude||!y) return;
+  // Map to angle (-90 to +90)
+  const angle = -90 + pos * 180;
 
-  $("dxy").innerText=dxy.dxy;
-  $("dxyPct").innerText=dxy.pct_change+"%";
-  setColor(dxyCard,dxy.dxy>100.5?"red":dxy.dxy>=99.5?"orange":"green");
+  $("needle").setAttribute(
+    "transform",
+    `rotate(${angle} 100 100)`
+  );
 
-  $("usdjpy").innerText=jpy.usd_jpy;
-  $("usdjpyPct").innerText=jpy.pct_change+"%";
-  setColor(jpyCard,jpy.usd_jpy<148?"red":jpy.usd_jpy<=150?"orange":"green");
-
-  $("usdinr").innerText=inr.price;
-  $("usdinrPct").innerText=inr.pct_change+"%";
-  setColor(inrCard,inr.pct_change>0.5?"red":inr.pct_change>=0.2?"orange":"green");
-
-  $("crude").innerText=crude.price;
-  $("crudePct").innerText=crude.pct_change+"%";
-  setColor(crudeCard,crude.pct_change>2.5?"red":crude.pct_change>=1?"orange":"green");
-
-  $("us10y").innerText=y.us_10y;
-  $("us10yPct").innerText=y.us_10y_pct+"%";
-  setColor(us10yCard,y.us_10y>4.1?"red":y.us_10y>=3.9?"orange":"green");
-
-  $("us2y").innerText=y.us_2y;
-  $("us2yPct").innerText=y.us_2y_pct+"%";
-  setColor(us2yCard,y.us_2y>4.2?"red":y.us_2y>=4.0?"orange":"green");
-
-  $("spread").innerText=y.yield_spread;
-  setColor(spreadCard,y.yield_spread<0?"red":y.yield_spread<=0.5?"orange":"green");
-
-  let stress=0;
-  if(dxy.dxy>100.5)stress++;
-  if(jpy.usd_jpy<148)stress++;
-  if(inr.pct_change>0.5)stress++;
-  if(crude.pct_change>2.5)stress++;
-  if(y.us_10y>4.1)stress++;
-  if(y.us_2y>4.2)stress++;
-  if(y.yield_spread<0)stress++;
-
-  if(stress<=1){
-    climateBanner.innerText="🌤️ Market Climate: Favorable";
-    climateBanner.style.background="#16a34a";
-    climateBanner.style.color="white";
-  }else if(stress<=3){
-    climateBanner.innerText="🌥️ Market Climate: Cautious";
-    climateBanner.style.background="#facc15";
-    climateBanner.style.color="black";
-  }else{
-    climateBanner.innerText="🌩️ Market Climate: Stressed";
-    climateBanner.style.background="#dc2626";
-    climateBanner.style.color="white";
-  }
-
-  $("lastUpdated").innerText="Last updated: "+new Date().toLocaleString();
+  $("regimeText").innerText = trend_regime;
+  $("regimeUpdated").innerText = "Based on previous close";
 }
 
 // NEWS
-let currentNewsRegion="global";
-async function loadNews(region="global"){
-  currentNewsRegion=region;
+async function loadNews(){
   const box=$("newsList");
-  box.innerHTML="<div class='p-3 opacity-60'>Loading news…</div>";
-
   try{
-    const r=await fetch(`${API}/news?region=${region}`);
+    const r=await fetch(`${API}/news?region=global`);
     const d=await r.json();
     box.innerHTML="";
     d.items.forEach(n=>{
       const div=document.createElement("div");
       div.className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700";
-      div.innerHTML=`
-        <a href="${n.link}" target="_blank" class="block font-medium">${n.title}</a>
-        <div class="text-xs opacity-60 mt-1">${d.source}</div>`;
+      div.innerHTML=`<a href="${n.link}" target="_blank">${n.title}</a>`;
       box.appendChild(div);
     });
   }catch{
@@ -318,22 +167,8 @@ async function loadNews(region="global"){
   }
 }
 
-globalNewsBtn.onclick=()=>{
-  globalNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
-  indiaNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";
-  loadNews("global");
-};
-indiaNewsBtn.onclick=()=>{
-  indiaNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
-  globalNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";
-  loadNews("india");
-};
-
-refreshBtn.onclick=()=>{ load(); loadRegime(); loadNews(currentNewsRegion); };
-
-load();
 loadRegime();
-loadNews("global");
+loadNews();
 </script>
 
 </body>
