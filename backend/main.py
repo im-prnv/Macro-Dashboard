@@ -1,16 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import HTTPException, Query, Response
 import yfinance as yf
 import json
 from pathlib import Path
 import feedparser
 from datetime import datetime
-from fastapi import HTTPException, Query
 import time
 from functools import wraps
+import pandas as pd
 
 
-        # Simple in-memory cache
+# ---------------- CACHE ----------------
 CACHE = {}
 
 def ttl_cache(ttl_seconds: int):
@@ -28,7 +29,6 @@ def ttl_cache(ttl_seconds: int):
             result = func(*args, **kwargs)
             CACHE[key] = (now, result)
             return result
-
         return wrapper
     return decorator
 
@@ -44,12 +44,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ---------------- HEALTH ----------------
+@app.api_route("/health", methods=["GET", "HEAD"])
+def health():
+    return Response(status_code=200)
+
 # ---------------- SAFE FETCH ----------------
 def fetch_1d_change(symbols):
-    """
-    Try multiple symbols safely.
-    Never throws. Returns (value, pct) or (None, None)
-    """
     for symbol in symbols:
         try:
             t = yf.Ticker(symbol)
@@ -68,40 +69,38 @@ def fetch_1d_change(symbols):
 
     return None, None
 
-# ---------------- HEALTH ----------------
-from fastapi import Response
-
-@app.api_route("/health", methods=["GET", "HEAD"])
-def health():
-    return Response(status_code=200)
 
 # ---------------- MACRO ----------------
 @app.get("/dxy")
-@ttl_cache(300)  # 5 minutes
+@ttl_cache(300)
 def dxy():
     v, p = fetch_1d_change(["DX-Y.NYB", "DXY", "USDX"])
     return {"dxy": v, "pct_change": p}
 
+
 @app.get("/usd-jpy")
-@ttl_cache(300)  # 5 minutes
+@ttl_cache(300)
 def usd_jpy():
     v, p = fetch_1d_change(["JPY=X"])
     return {"usd_jpy": v, "pct_change": p}
 
+
 @app.get("/usd-inr")
-@ttl_cache(300)  # 5 minutes
+@ttl_cache(300)
 def usd_inr():
     v, p = fetch_1d_change(["INR=X"])
     return {"price": v, "pct_change": p}
 
+
 @app.get("/crude")
-@ttl_cache(300)  # 5 minutes
+@ttl_cache(300)
 def crude():
     v, p = fetch_1d_change(["BZ=F"])
     return {"price": v, "pct_change": p}
 
+
 @app.get("/us-yields")
-@ttl_cache(600)  # 5 minutes
+@ttl_cache(600)
 def us_yields():
     y10, y10p = fetch_1d_change(["^TNX"])
     y2, y2p = fetch_1d_change(["^IRX"])
@@ -123,6 +122,7 @@ def us_yields():
         "yield_spread": round(y10 - y2, 2)
     }
 
+
 # ---------------- FII / DII ----------------
 @app.get("/fii-dii")
 def fii_dii():
@@ -131,8 +131,7 @@ def fii_dii():
         return json.load(f)
 
 
-#----------------Market News----------------
-
+# ---------------- NEWS ----------------
 @app.get("/news")
 @ttl_cache(600)
 def market_news(region: str = Query("global", enum=["global", "india"])):
@@ -170,3 +169,44 @@ def market_news(region: str = Query("global", enum=["global", "india"])):
         "updated": datetime.utcnow().isoformat(),
         "items": items
     }
+
+
+# ---------------- MARKET REGIME (NEW) ----------------
+@app.get("/market-regime")
+@ttl_cache(86400)  # once per day
+def market_regime():
+    try:
+        df = yf.download("^NSEI", period="1y", interval="1d")
+
+        if df.empty or len(df) < 200:
+            raise HTTPException(status_code=502, detail="Insufficient data")
+
+        df["EMA50"] = df["Close"].ewm(span=50, adjust=False).mean()
+        df["EMA200"] = df["Close"].ewm(span=200, adjust=False).mean()
+
+        close = round(float(df["Close"].iloc[-1]), 2)
+        ema50 = round(float(df["EMA50"].iloc[-1]), 2)
+        ema200 = round(float(df["EMA200"].iloc[-1]), 2)
+
+        if close > ema50 and ema50 > ema200:
+            regime = "Bullish"
+            trade_bias = "Aggressive Long"
+        elif close < ema50 and close > ema200:
+            regime = "Corrective"
+            trade_bias = "Defensive"
+        else:
+            regime = "Bearish"
+            trade_bias = "Capital Protection"
+
+        return {
+            "index": "NIFTY 50",
+            "close": close,
+            "ema50": ema50,
+            "ema200": ema200,
+            "trend_regime": regime,
+            "trade_bias": trade_bias,
+            "based_on": "Previous daily close"
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
