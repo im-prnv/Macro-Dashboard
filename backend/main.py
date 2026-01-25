@@ -167,16 +167,20 @@ def market_news(region: str = Query("global", enum=["global", "india"])):
     }
 
 # ---------------- MARKET REGIME (FINAL FIX) ----------------
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
+REGIME_FILE = DATA_DIR / "market_regime.json"
+
 @app.get("/market-regime")
 def market_regime():
-    path = Path("backend/data/market_regime.json")
-
-    # Always return file if it exists
-    if path.exists():
-        with open(path) as f:
+    if REGIME_FILE.exists():
+        with open(REGIME_FILE) as f:
             return json.load(f)
 
     return {
         "trend_regime": "Unavailable",
-        "note": "Local cache missing"
+        "note": "Local cache missing",
+        "expected_path": str(REGIME_FILE)
     }
