@@ -1,5 +1,8 @@
 {
   "index": "NIFTY 50",
-  "trend_regime": "Unavailable",
+  "trend_regime": "Corrective",
+  "close": 22120,
+  "ema50": 22280,
+  "ema200": 21540,
   "based_on": "Previous daily close"
 }
