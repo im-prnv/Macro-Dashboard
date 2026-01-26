@@ -11,6 +11,10 @@ tailwind.config = { darkMode: 'class' }
 </script>
 
 <style>
+  iframe {
+  max-width: 100%;
+}
+
 .card{
   position:relative;
   display:flex;
@@ -56,10 +60,15 @@ svg{max-width:100%;height:auto}
     id="regimeFrame"
     src="regime.html"
     class="w-full rounded-xl"
-    style="border:none;overflow:hidden;"
+    style="
+      border:none;
+      overflow:hidden;
+      display:block;
+    "
     scrolling="no">
   </iframe>
 </section>
+
 
 <!-- MACRO CARDS -->
 <main class="p-4 space-y-10">
@@ -230,14 +239,16 @@ loadNews("global");
 
   <script>
 window.addEventListener("message", (event) => {
-  if (event.data?.type === "REGIME_HEIGHT") {
+  if (event.data && event.data.type === "REGIME_HEIGHT") {
     const frame = document.getElementById("regimeFrame");
-    if (frame) {
-      frame.style.height = event.data.height + "px";
-    }
+    if (!frame) return;
+
+    // Add small buffer for mobile safe-area
+    frame.style.height = (event.data.height + 8) + "px";
   }
 });
 </script>
+
 
 
 </body>
