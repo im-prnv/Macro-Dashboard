@@ -56,20 +56,26 @@ svg{max-width:100%;height:auto}
 
 <!-- REGIME DIAL -->
 <section class="m-4">
-  <iframe
-  id="regimeFrame"
-  src="regime.html"
-  class="w-full rounded-xl"
-  style="
-    border:none;
-    overflow:hidden;
-    display:block;
-    max-height:360px;
-  "
-  scrolling="no">
-</iframe>
-
+  <div
+    id="regimeContainer"
+    style="
+      max-height: 320px;
+      overflow: hidden;
+    "
+  >
+    <iframe
+      id="regimeFrame"
+      src="regime.html"
+      style="
+        width: 100%;
+        border: none;
+        display: block;
+      "
+      scrolling="no"
+    ></iframe>
+  </div>
 </section>
+
 
 
 <!-- MACRO CARDS -->
@@ -241,15 +247,21 @@ loadNews("global");
 
   <script>
 window.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "REGIME_HEIGHT") {
+  if (event.data?.type === "REGIME_HEIGHT") {
     const frame = document.getElementById("regimeFrame");
-    if (!frame) return;
+    const container = document.getElementById("regimeContainer");
+    if (!frame || !container) return;
 
-    // Add small buffer for mobile safe-area
-    frame.style.height = (event.data.height + 8) + "px";
+    const MAX_HEIGHT = 320; // fits dial + labels perfectly
+
+    const h = Math.min(event.data.height, MAX_HEIGHT);
+
+    frame.style.height = h + "px";
+    container.style.height = h + "px";
   }
 });
 </script>
+
 
 
 
