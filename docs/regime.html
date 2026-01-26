@@ -110,19 +110,23 @@ async function loadRegime(){
 loadRegime();
 </script>
 
-  <script>
+<script>
 function notifyHeight() {
-  const height = document.body.scrollHeight;
+  const height = document.documentElement.scrollHeight;
   window.parent.postMessage(
     { type: "REGIME_HEIGHT", height },
     "*"
   );
 }
 
-// Notify on load & resize
+// Run multiple times to catch SVG + font render
 window.addEventListener("load", notifyHeight);
+setTimeout(notifyHeight, 100);
+setTimeout(notifyHeight, 300);
+setTimeout(notifyHeight, 600);
 window.addEventListener("resize", notifyHeight);
 </script>
+
 
 
 </body>
