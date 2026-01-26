@@ -10,11 +10,8 @@
 <style>
 body{
   margin:0;
-  background:#0f172a; /* force visible bg */
+  background:transparent;
   color:#e5e7eb;
-}
-section{
-  min-height:260px; /* prevent iframe collapse */
 }
 svg{max-width:100%;height:auto}
 </style>
@@ -23,10 +20,11 @@ svg{max-width:100%;height:auto}
 <body>
 
 <section class="p-3 rounded-xl bg-gray-800 text-center">
-
+  <div id="scaleWrapper" class="origin-top scale-[0.85]">
   <div id="regimeHeader" class="font-semibold mb-2">
     Trend Daily TF: --
-  </div>
+    </div>
+    </section>
 
   <svg viewBox="0 0 200 110" class="mx-auto">
 
@@ -42,76 +40,93 @@ svg{max-width:100%;height:auto}
     <path d="M140 40 A80 80 0 0 1 180 100"
           stroke="#16a34a" stroke-width="14" fill="none"/>
 
-    <!-- EMA labels -->
-    <text x="70" y="52" font-size="12" fill="#e5e7eb"
-          text-anchor="middle" dominant-baseline="middle"
-          transform="rotate(-35 70 52)">200</text>
+    <!-- EMA labels (inside ring) -->
+    <!-- EMA 200 -->
+    <text x="70" y="52"
+          font-size="12"
+          fill="#e5e7eb"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          transform="rotate(-35 70 52)">
+      200
+    </text>
 
-    <text x="130" y="52" font-size="12" fill="#e5e7eb"
-          text-anchor="middle" dominant-baseline="middle"
-          transform="rotate(35 130 52)">50</text>
+    <!-- EMA 50 -->
+    <text x="130" y="52"
+          font-size="12"
+          fill="#e5e7eb"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          transform="rotate(35 130 52)">
+      50
+    </text>
 
-    <!-- Needle (DEFAULT CENTER) -->
-    <g id="needle" transform="rotate(0 100 100)">
+    <!-- Needle -->
+    <g id="needle" transform="rotate(-45 100 100)">
       <line x1="100" y1="100" x2="100" y2="55"
-            stroke="#f9fafb"
-            stroke-width="5"
-            stroke-linecap="round"/>
+      stroke="#f9fafb" stroke-width="5" stroke-linecap="round"/>
     </g>
 
     <circle cx="100" cy="100" r="6" fill="#f9fafb"/>
   </svg>
 
-  <div class="font-semibold mt-1">EMA Trend Strength</div>
-
+  <div class="font-semibold mt-1">EMA</div>
   <div id="regimeUpdated" class="text-xs opacity-70 mt-1">
     Last updated: --
   </div>
-
 </section>
 
 <script>
-const API = "https://macro-dashboard-vk03.onrender.com";
+const API="https://macro-dashboard-vk03.onrender.com";
+
+async function fetchRegime(){
+  try{
+    const r=await fetch(API+"/market-regime");
+    return r.ok?await r.json():null;
+  }catch{
+    return null;
+  }
+}
 
 async function loadRegime(){
-  try{
-    const r = await fetch(API + "/market-regime");
-    if(!r.ok) throw new Error("Fetch failed");
+  const d=await fetchRegime();
+  if(!d) return;
 
-    const d = await r.json();
+  // % distance from EMA200
+  let pct=((d.close-d.ema200)/d.ema200)*100;
+  pct=Math.max(-2,Math.min(2,pct));
 
-    // % distance from EMA200 (FINAL LOGIC)
-    let pct = ((d.close - d.ema200) / d.ema200) * 100;
-    pct = Math.max(-2, Math.min(2, pct));
+  // map -2..+2 → -90..+30
+  const angle=-30+(pct/2)*60;
 
-    const angle = -(pct / 2) * 90;
+  document.getElementById("needle")
+    .setAttribute("transform",`rotate(${angle} 100 100)`);
 
-    document.getElementById("needle")
-      .setAttribute("transform", `rotate(${angle} 100 100)`);
+  document.getElementById("regimeHeader")
+    .innerText=`Trend Daily TF: ${d.trend_regime}`;
 
-    document.getElementById("regimeHeader")
-      .innerText = `Trend Daily TF: ${d.trend_regime}`;
-
-    document.getElementById("regimeUpdated")
-      .innerText = "Last updated: " + new Date().toLocaleString();
-
-  }catch(e){
-    // graceful fallback
-    document.getElementById("regimeHeader").innerText =
-      "Trend Daily TF: Data unavailable";
-  }
-
-  notifyHeight();
+  document.getElementById("regimeUpdated")
+    .innerText="Last updated: "+new Date().toLocaleString();
 }
 
-function notifyHeight(){
-  const h = document.documentElement.scrollHeight;
-  window.parent.postMessage({ type:"REGIME_HEIGHT", height:h }, "*");
+loadRegime();
+</script>
+
+<script>
+function notifyHeight() {
+  const height = document.documentElement.scrollHeight;
+  window.parent.postMessage(
+    { type: "REGIME_HEIGHT", height },
+    "*"
+  );
 }
 
-window.addEventListener("load", loadRegime);
-window.addEventListener("resize", notifyHeight);
+// Run multiple times to catch SVG + font render
+window.addEventListener("load", notifyHeight);
+setTimeout(notifyHeight, 100);
 setTimeout(notifyHeight, 300);
+setTimeout(notifyHeight, 600);
+window.addEventListener("resize", notifyHeight);
 </script>
 
 </body>
