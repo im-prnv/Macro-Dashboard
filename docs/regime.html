@@ -39,8 +39,25 @@ svg{max-width:100%;height:auto}
           stroke="#16a34a" stroke-width="14" fill="none"/>
 
     <!-- EMA labels (inside ring) -->
-    <text x="70" y="52" font-size="11" fill="#e5e7eb" text-anchor="middle">200</text>
-    <text x="130" y="52" font-size="11" fill="#e5e7eb" text-anchor="middle">50</text>
+    <!-- EMA 200 (Red–Yellow boundary) -->
+      <text x="70" y="52"
+        font-size="11"
+        fill="#e5e7eb"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        transform="rotate(60 70 52)">
+            200
+      </text>
+
+<!-- EMA 50 (Yellow–Green boundary) -->
+    <text x="130" y="52"
+      font-size="11"
+      fill="#e5e7eb"
+      text-anchor="middle"
+      dominant-baseline="middle"
+      transform="rotate(120 130 52)">
+        50
+    </text>
 
     <!-- Needle -->
     <g id="needle" transform="rotate(-45 100 100)">
