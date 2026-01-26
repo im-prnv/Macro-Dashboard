@@ -14,6 +14,23 @@ body{
   color:#e5e7eb;
 }
 svg{max-width:100%;height:auto}
+
+.trend-bullish {
+  background: #16a34a; /* green */
+}
+
+.trend-bearish {
+  background: #dc2626; /* red */
+}
+
+.trend-correction {
+  background: #facc15; /* yellow */
+  color: #1f2937; /* dark text for contrast */
+}
+
+.trend-neutral {
+  background: #1f2937; /* fallback */
+}
 </style>
 </head>
 
@@ -21,9 +38,10 @@ svg{max-width:100%;height:auto}
 
 <section class="p-3 rounded-xl bg-gray-800 text-center">
   <div id="scaleWrapper" class="origin-top scale-[0.85]">
-  <div id="regimeHeader" class="font-semibold mb-2">
-    Trend Daily TF: --
-    </div>
+  <div id="regimeHeader"
+     class="font-semibold mb-2 px-3 py-2 rounded-lg trend-neutral">
+  Trend Daily TF: --
+</div>
     </section>
 
   <svg viewBox="0 0 200 110" class="mx-auto">
@@ -102,8 +120,31 @@ async function loadRegime(){
   document.getElementById("needle")
     .setAttribute("transform",`rotate(${angle} 100 100)`);
 
-  document.getElementById("regimeHeader")
-    .innerText=`Trend Daily TF: ${d.trend_regime}`;
+  const header = document.getElementById("regimeHeader");
+
+// reset classes
+header.classList.remove(
+  "trend-bullish",
+  "trend-bearish",
+  "trend-correction",
+  "trend-neutral"
+);
+
+header.innerText = `Trend Daily TF: ${d.trend_regime}`;
+
+// apply color based on regime
+if (d.trend_regime === "Bullish") {
+  header.classList.add("trend-bullish");
+} 
+else if (d.trend_regime === "Bearish") {
+  header.classList.add("trend-bearish");
+} 
+else if (d.trend_regime === "Correction") {
+  header.classList.add("trend-correction");
+} 
+else {
+  header.classList.add("trend-neutral");
+}
 
   document.getElementById("regimeUpdated")
     .innerText="Last updated: "+new Date().toLocaleString();
