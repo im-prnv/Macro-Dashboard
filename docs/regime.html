@@ -97,40 +97,40 @@ svg{max-width:100%;height:auto}
 const API = "https://macro-dashboard-vk03.onrender.com";
 
 /* Fetch regime data */
-async function fetchRegime(){
-  try{
-    const r = await fetch(API + "/market-regime");
-    return r.ok ? await r.json() : null;
-  }catch{
-    return null;
-  }
-}
-
-/* Load & render regime */
 async function loadRegime(){
   const d = await fetchRegime();
   if(!d) return;
 
-  // % distance from EMA200
-  let pct = ((d.close - d.ema200) / d.ema200) * 100;
+  const close = Number(d.close);
+  const ema200 = Number(d.ema200);
 
-  // clamp to avoid extremes
+  // Safety check
+  if(!close || !ema200){
+    console.warn("Invalid regime data", d);
+    return;
+  }
+
+  // % distance from EMA200
+  let pct = ((close - ema200) / ema200) * 100;
+
+  // Clamp to safe visual range
   pct = Math.max(-2, Math.min(2, pct));
 
-  // map -2%..+2% → needle angle
+  // Map -2%..+2% → -90°..+30°
   const angle = -30 + (pct / 2) * 60;
 
-  document.getElementById("needle")
-    .setAttribute("transform", `rotate(${angle} 100 100)`);
+  const needle = document.getElementById("needle");
+  needle.setAttribute(
+    "transform",
+    `rotate(${angle} 100 100)`
+  );
 
-  document.getElementById("regimeHeader")
-    .innerText = `Trend Daily TF: ${d.trend_regime}`;
+  document.getElementById("regimeHeader").innerText =
+    `Trend Daily TF: ${d.trend_regime}`;
 
-  document.getElementById("regimeUpdated")
-    .innerText = "Last updated: " + new Date().toLocaleString();
+  document.getElementById("regimeUpdated").innerText =
+    "Last updated: " + new Date().toLocaleString();
 }
-
-loadRegime();
 </script>
 
 </body>
