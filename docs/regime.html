@@ -20,12 +20,10 @@ svg{max-width:100%;height:auto}
 <body>
 
 <section class="p-3 rounded-xl bg-gray-800 text-center">
-  <div id="scaleWrapper" class="origin-top scale-[0.85]">
+
   <div id="regimeHeader" class="font-semibold mb-2">
     Trend Daily TF: --
-    </div>
-    </section>
-
+  </div>
 
   <svg viewBox="0 0 200 110" class="mx-auto">
 
@@ -41,40 +39,31 @@ svg{max-width:100%;height:auto}
     <path d="M140 40 A80 80 0 0 1 180 100"
           stroke="#16a34a" stroke-width="14" fill="none"/>
 
-    <!-- EMA labels (inside ring) -->
-   <!-- EMA 200 -->
-<text x="70" y="52"
-      font-size="12"
-      fill="#e5e7eb"
-      text-anchor="middle"
-      dominant-baseline="middle"
-      transform="rotate(-35 70 52)">
-  200
-</text>
+    <!-- EMA labels -->
+    <text x="70" y="52" font-size="12" fill="#e5e7eb"
+          text-anchor="middle" dominant-baseline="middle"
+          transform="rotate(-35 70 52)">200</text>
 
-<!-- EMA 50 -->
-<text x="130" y="52"
-      font-size="12"
-      fill="#e5e7eb"
-      text-anchor="middle"
-      dominant-baseline="middle"
-      transform="rotate(35 130 52)">
-  50
-</text>
+    <text x="130" y="52" font-size="12" fill="#e5e7eb"
+          text-anchor="middle" dominant-baseline="middle"
+          transform="rotate(35 130 52)">50</text>
 
     <!-- Needle -->
-    <g id="needle" transform="rotate(-45 100 100)">
+    <g id="needle" transform="rotate(0 100 100)">
       <line x1="100" y1="100" x2="100" y2="55"
-      stroke="#f9fafb" stroke-width="5" stroke-linecap="round"/>
+            stroke="#f9fafb" stroke-width="5"
+            stroke-linecap="round"/>
     </g>
 
     <circle cx="100" cy="100" r="6" fill="#f9fafb"/>
   </svg>
 
-  <div class="font-semibold mt-1">EMA</div>
+  <div class="font-semibold mt-1">EMA Trend Strength</div>
+
   <div id="regimeUpdated" class="text-xs opacity-70 mt-1">
     Last updated: --
   </div>
+
 </section>
 
 <script>
@@ -82,39 +71,43 @@ const API="https://macro-dashboard-vk03.onrender.com";
 
 async function fetchRegime(){
   try{
-    const r=await fetch(API+"/market-regime");
-    return r.ok?await r.json():null;
+    const r = await fetch(API + "/market-regime");
+    return r.ok ? await r.json() : null;
   }catch{
     return null;
   }
 }
 
 async function loadRegime(){
-  const d=await fetchRegime();
+  const d = await fetchRegime();
   if(!d) return;
 
-  // % distance from EMA200
-  let pct=((d.close-d.ema200)/d.ema200)*100;
-  pct=Math.max(-2,Math.min(2,pct));
+  // EMA spread %
+  let spread = ((d.ema50 - d.ema200) / d.ema200) * 100;
 
-  // map -2..+2 → -90..+30
-  const angle=-30+(pct/2)*60;
+  // clamp
+  spread = Math.max(-3, Math.min(3, spread));
+
+  // map -3..+3 → -90..+90
+  const angle = (spread / 3) * 90;
 
   document.getElementById("needle")
-    .setAttribute("transform",`rotate(${angle} 100 100)`);
+    .setAttribute("transform", `rotate(${angle} 100 100)`);
 
   document.getElementById("regimeHeader")
-    .innerText=`Trend Daily TF: ${d.trend_regime}`;
+    .innerText = `Trend Daily TF: ${d.trend_regime}`;
 
   document.getElementById("regimeUpdated")
-    .innerText="Last updated: "+new Date().toLocaleString();
+    .innerText = "Last updated: " + new Date().toLocaleString();
+
+  notifyHeight();
 }
 
 loadRegime();
 </script>
 
 <script>
-function notifyHeight() {
+function notifyHeight(){
   const height = document.documentElement.scrollHeight;
   window.parent.postMessage(
     { type: "REGIME_HEIGHT", height },
@@ -122,15 +115,11 @@ function notifyHeight() {
   );
 }
 
-// Run multiple times to catch SVG + font render
 window.addEventListener("load", notifyHeight);
-setTimeout(notifyHeight, 100);
-setTimeout(notifyHeight, 300);
-setTimeout(notifyHeight, 600);
 window.addEventListener("resize", notifyHeight);
+setTimeout(notifyHeight, 200);
+setTimeout(notifyHeight, 500);
 </script>
-
-
 
 </body>
 </html>
