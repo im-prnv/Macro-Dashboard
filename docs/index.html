@@ -18,24 +18,15 @@ tailwind.config = { darkMode: 'class' }
 }
 .dark .card{background:#1f2937}
 svg{max-width:100%;height:auto}
-#needleGroup{transition:transform 0.8s ease-in-out;}
 </style>
 </head>
 
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
-<!-- HEADER -->
 <header class="flex justify-between p-4 bg-gray-200 dark:bg-gray-800">
   <div>
-    <div class="flex items-center gap-3">
-      <img src="logo.png" class="h-8 w-8 object-contain">
-      <h1 class="text-xl font-semibold">Macro Dashboard</h1>
-    </div>
+    <h1 class="text-xl font-semibold">Macro Dashboard</h1>
     <div id="lastUpdated" class="text-xs opacity-70 mt-1">Last updated: --</div>
-  </div>
-  <div class="space-x-2">
-    <button id="refreshBtn" class="bg-blue-600 text-white px-3 py-1 rounded">🔄</button>
-    <button id="themeToggle" class="bg-gray-300 dark:bg-gray-700 px-3 py-1 rounded">🌙</button>
   </div>
 </header>
 
@@ -50,183 +41,77 @@ svg{max-width:100%;height:auto}
     Trend Daily TF: --
   </div>
 
-  <svg viewBox="0 0 200 110" class="mx-auto">
-    <defs>
-      <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    </defs>
+  <svg viewBox="0 0 200 120" class="mx-auto">
 
-    <path id="zoneBear" d="M10 100 A90 90 0 0 1 70 20" stroke="#dc2626" stroke-width="14" fill="none"/>
-    <path id="zoneCorr" d="M70 20 A90 90 0 0 1 130 20" stroke="#facc15" stroke-width="14" fill="none"/>
-    <path id="zoneBull" d="M130 20 A90 90 0 0 1 190 100" stroke="#16a34a" stroke-width="14" fill="none"/>
+    <!-- RED (Bearish) -->
+    <path d="M10 100 A90 90 0 0 1 70 30"
+          stroke="#dc2626" stroke-width="14" fill="none"/>
 
-    <g id="needleGroup" transform="rotate(-90 100 100)">
-      <line x1="100" y1="100" x2="100" y2="32"
+    <!-- YELLOW (Corrective) -->
+    <path d="M70 30 A90 90 0 0 1 130 30"
+          stroke="#facc15" stroke-width="14" fill="none"/>
+
+    <!-- GREEN (Bullish) -->
+    <path d="M130 30 A90 90 0 0 1 190 100"
+          stroke="#16a34a" stroke-width="14" fill="none"/>
+
+    <!-- EMA labels -->
+    <text x="70" y="25" text-anchor="middle" font-size="10" fill="currentColor">200</text>
+    <text x="130" y="25" text-anchor="middle" font-size="10" fill="currentColor">50</text>
+
+    <!-- Needle -->
+    <g id="needleGroup" transform="rotate(-30 100 100)">
+      <line x1="100" y1="100" x2="100" y2="35"
             stroke="#111827" stroke-width="5" stroke-linecap="round"/>
     </g>
-    <circle cx="100" cy="100" r="7" fill="#111827"/>
+
+    <circle cx="100" cy="100" r="6" fill="#111827"/>
   </svg>
 
   <div class="font-semibold mt-1">EMA</div>
   <div id="regimeUpdated" class="text-xs opacity-70 mt-1">Last updated: --</div>
 </section>
 
-<main class="p-4 space-y-10">
-
-<!-- MACRO CARDS -->
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
-  <div id="dxyCard" class="card"><div>DXY</div><div><div id="dxy">--</div><div id="dxyPct" class="text-sm opacity-70"></div></div></div>
-  <div id="jpyCard" class="card"><div>USD / JPY</div><div><div id="usdjpy">--</div><div id="usdjpyPct" class="text-sm opacity-70"></div></div></div>
-  <div id="inrCard" class="card"><div>USD / INR</div><div><div id="usdinr">--</div><div id="usdinrPct" class="text-sm opacity-70"></div></div></div>
-  <div id="crudeCard" class="card"><div>Brent</div><div><div id="crude">--</div><div id="crudePct" class="text-sm opacity-70"></div></div></div>
-  <div id="us10yCard" class="card"><div>US 10Y</div><div><div id="us10y">--</div><div id="us10yPct" class="text-sm opacity-70"></div></div></div>
-  <div id="us2yCard" class="card"><div>US 2Y</div><div><div id="us2y">--</div><div id="us2yPct" class="text-sm opacity-70"></div></div></div>
-  <div id="spreadCard" class="card"><div>Yield Spread</div><div><div id="spread">--</div></div></div>
-</section>
-
-<!-- NEWS -->
-<section class="m-4 mt-10">
-  <div class="flex justify-between items-center mb-3">
-    <h2 class="text-lg font-semibold">📰 Market News</h2>
-    <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1 text-xs">
-      <button id="globalNewsBtn" class="px-3 py-1 rounded-md bg-blue-600 text-white">Global</button>
-      <button id="indiaNewsBtn" class="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200">India</button>
-    </div>
-  </div>
-  <div class="rounded-xl border bg-white dark:bg-gray-800">
-    <div id="newsList" class="max-h-96 overflow-y-auto divide-y text-sm">
-      <div class="p-3 opacity-60">Loading news…</div>
-    </div>
-  </div>
-</section>
-
-</main>
-
 <script>
 const API="https://macro-dashboard-vk03.onrender.com";
 const $=id=>document.getElementById(id);
-const setColor=(el,c)=>{if(el)el.style.borderLeftColor=c};
-
-// THEME
-const t=$("themeToggle");
-const s=localStorage.getItem("theme");
-if(s==="light"){document.documentElement.classList.remove("dark");t.innerText="☀️";}
-else{document.documentElement.classList.add("dark");t.innerText="🌙";}
-t.onclick=()=>document.documentElement.classList.toggle("dark");
 
 async function j(p){
   try{const r=await fetch(API+p);return r.ok?await r.json():null}catch{return null}
 }
 
-/* === REGIME === */
+/* ===== REGIME LOGIC ===== */
 async function loadRegime(){
   const d=await j("/market-regime");
   if(!d||!d.close)return;
 
-  const { close, ema50, ema200, trend_regime } = d;
-  // continuous EMA proximity mapping
-  let pos=(close-ema200)/(ema50-ema200);
-  pos=Math.max(0,Math.min(1,pos));
-  const angle=-90+(pos*180);
-  $("needleGroup").setAttribute("transform",`rotate(${angle} 100 100)`);
+  const { close, ema200, trend_regime } = d;
 
-  $("regimeHeader").innerText=`Trend Daily TF: ${trend_regime}`;
-  $("regimeUpdated").innerText="Last updated: "+new Date().toLocaleString();
+  // % distance from EMA200
+  let pct = ((close - ema200) / ema200) * 100;
 
-  // glow on active zone
-  ["zoneBear","zoneCorr","zoneBull"].forEach(z=>$(z).removeAttribute("filter"));
-  if(trend_regime==="Bearish")$("zoneBear").setAttribute("filter","url(#glow)");
-  if(trend_regime==="Corrective")$("zoneCorr").setAttribute("filter","url(#glow)");
-  if(trend_regime==="Bullish")$("zoneBull").setAttribute("filter","url(#glow)");
-}
+  // clamp between -2% and +2%
+  pct = Math.max(-2, Math.min(2, pct));
 
-/* === MACRO + CLIMATE === */
-async function load(){
-  const dxy=await j("/dxy");
-  const jpy=await j("/usd-jpy");
-  const inr=await j("/usd-inr");
-  const crude=await j("/crude");
-  const y=await j("/us-yields");
-  if(!dxy||!jpy||!inr||!crude||!y)return;
-
-  $("dxy").innerText=dxy.dxy;
-  $("dxyPct").innerText=dxy.pct_change+"%";
-  setColor(dxyCard,dxy.dxy>100.5?"red":dxy.dxy>=99.5?"orange":"green");
-
-  $("usdjpy").innerText=jpy.usd_jpy;
-  $("usdjpyPct").innerText=jpy.pct_change+"%";
-  setColor(jpyCard,jpy.usd_jpy<148?"red":jpy.usd_jpy<=150?"orange":"green");
-
-  $("usdinr").innerText=inr.price;
-  $("usdinrPct").innerText=inr.pct_change+"%";
-  setColor(inrCard,inr.pct_change>0.5?"red":inr.pct_change>=0.2?"orange":"green");
-
-  $("crude").innerText=crude.price;
-  $("crudePct").innerText=crude.pct_change+"%";
-  setColor(crudeCard,crude.pct_change>2.5?"red":crude.pct_change>=1?"orange":"green");
-
-  $("us10y").innerText=y.us_10y;
-  $("us10yPct").innerText=y.us_10y_pct+"%";
-  setColor(us10yCard,y.us_10y>4.1?"red":y.us_10y>=3.9?"orange":"green");
-
-  $("us2y").innerText=y.us_2y;
-  $("us2yPct").innerText=y.us_2y_pct+"%";
-  setColor(us2yCard,y.us_2y>4.2?"red":y.us_2y>=4.0?"orange":"green");
-
-  $("spread").innerText=y.yield_spread;
-  setColor(spreadCard,y.yield_spread<0?"red":y.yield_spread<=0.5?"orange":"green");
-
-  // Market Climate
-  let stress=0;
-  if(dxy.dxy>100.5)stress++;
-  if(jpy.usd_jpy<148)stress++;
-  if(inr.pct_change>0.5)stress++;
-  if(crude.pct_change>2.5)stress++;
-  if(y.us_10y>4.1)stress++;
-  if(y.us_2y>4.2)stress++;
-  if(y.yield_spread<0)stress++;
-
-  if(stress<=1){
-    climateBanner.innerText="🌤️ Market Climate: Favorable";
-    climateBanner.style.background="#16a34a";climateBanner.style.color="white";
-  }else if(stress<=3){
-    climateBanner.innerText="🌥️ Market Climate: Cautious";
-    climateBanner.style.background="#facc15";climateBanner.style.color="black";
+  let angle;
+  if(pct <= 0){
+    // Red zone: -90° to -30°
+    angle = -30 + (pct / 2) * 60;
   }else{
-    climateBanner.innerText="🌩️ Market Climate: Stressed";
-    climateBanner.style.background="#dc2626";climateBanner.style.color="white";
+    // Yellow side: -30° to +30°
+    angle = -30 + (pct / 2) * 60;
   }
 
-  $("lastUpdated").innerText="Last updated: "+new Date().toLocaleString();
+  $("needleGroup").setAttribute(
+    "transform",
+    `rotate(${angle} 100 100)`
+  );
+
+  $("regimeHeader").innerText = `Trend Daily TF: ${trend_regime}`;
+  $("regimeUpdated").innerText = "Last updated: " + new Date().toLocaleString();
 }
 
-/* === NEWS === */
-let currentNews="global";
-async function loadNews(region){
-  currentNews=region;
-  const box=$("newsList");
-  box.innerHTML="<div class='p-3 opacity-60'>Loading news…</div>";
-  try{
-    const r=await fetch(`${API}/news?region=${region}`);
-    const d=await r.json();
-    box.innerHTML="";
-    d.items.forEach(n=>{
-      const div=document.createElement("div");
-      div.className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700";
-      div.innerHTML=`<a href="${n.link}" target="_blank">${n.title}</a>`;
-      box.appendChild(div);
-    });
-  }catch{
-    box.innerHTML="<div class='p-3 text-red-500'>Failed to load news</div>";
-  }
-}
-
-globalNewsBtn.onclick=()=>{globalNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
-  indiaNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";loadNews("global");};
-indiaNewsBtn.onclick=()=>{indiaNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
-  globalNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";loadNews("india");};
-
-refreshBtn.onclick=()=>{load();loadRegime();loadNews(currentNews)};
-load();loadRegime();loadNews("global");
+loadRegime();
 </script>
 
 </body>
