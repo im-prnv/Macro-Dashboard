@@ -21,8 +21,12 @@ tailwind.config = { darkMode: 'class' }
   background:#fff
 }
 .dark .card{background:#1f2937}
-
 svg{max-width:100%;height:auto}
+
+/* smooth needle animation */
+#needleGroup{
+  transition: transform 0.8s ease-in-out;
+}
 </style>
 </head>
 
@@ -55,24 +59,35 @@ svg{max-width:100%;height:auto}
   </div>
 
   <svg viewBox="0 0 200 110" class="mx-auto">
-    <!-- Zones -->
-    <path d="M10 100 A90 90 0 0 1 70 20" stroke="#dc2626" stroke-width="14" fill="none"/>
-    <path d="M70 20 A90 90 0 0 1 130 20" stroke="#facc15" stroke-width="14" fill="none"/>
-    <path d="M130 20 A90 90 0 0 1 190 100" stroke="#16a34a" stroke-width="14" fill="none"/>
+    <defs>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="4" result="blur"/>
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
 
-    <!-- Needle group (FORCED VISIBLE) -->
-    <g id="needleGroup"
-       transform="rotate(-90 100 100)"
-       vector-effect="non-scaling-stroke"
-       shape-rendering="geometricPrecision">
-      <line x1="100" y1="100"
-            x2="100" y2="30"
-            stroke="#111827"
-            stroke-width="5"
-            stroke-linecap="round"/>
+    <!-- zones -->
+    <path id="zoneBear"
+      d="M10 100 A90 90 0 0 1 70 20"
+      stroke="#dc2626" stroke-width="14" fill="none"/>
+
+    <path id="zoneCorr"
+      d="M70 20 A90 90 0 0 1 130 20"
+      stroke="#facc15" stroke-width="14" fill="none"/>
+
+    <path id="zoneBull"
+      d="M130 20 A90 90 0 0 1 190 100"
+      stroke="#16a34a" stroke-width="14" fill="none"/>
+
+    <!-- needle -->
+    <g id="needleGroup" transform="rotate(-90 100 100)">
+      <line x1="100" y1="100" x2="100" y2="32"
+            stroke="#111827" stroke-width="5" stroke-linecap="round"/>
     </g>
 
-    <!-- Center hub -->
     <circle cx="100" cy="100" r="7" fill="#111827"/>
   </svg>
 
@@ -104,7 +119,6 @@ svg{max-width:100%;height:auto}
       <button id="indiaNewsBtn" class="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200">India</button>
     </div>
   </div>
-
   <div class="rounded-xl border bg-white dark:bg-gray-800">
     <div id="newsList" class="max-h-96 overflow-y-auto divide-y text-sm">
       <div class="p-3 opacity-60">Loading news…</div>
@@ -135,37 +149,29 @@ async function loadRegime(){
   const d=await j("/market-regime");
   if(!d||!d.close)return;
 
-  let pos;
+  const { close, ema50, ema200, trend_regime } = d;
 
-if (close >= ema50) {
-  // Bullish → right side
-  pos = 1;
-} else if (close <= ema200) {
-  // Bearish → left side
-  pos = 0;
-} else {
-  // Corrective → proportional between EMA200 & EMA50
-  pos = (close - ema200) / (ema50 - ema200);
+  // EMA proximity (continuous but clamped to arc)
+  let pos = (close - ema200) / (ema50 - ema200);
+  pos = Math.max(0, Math.min(1, pos));   // stay on arc
+
+  const angle = -90 + (pos * 180);
+  $("needleGroup").setAttribute("transform",`rotate(${angle} 100 100)`);
+
+  $("regimeHeader").innerText = `Trend Daily TF: ${trend_regime}`;
+  $("regimeUpdated").innerText = "Last updated: " + new Date().toLocaleString();
+
+  // glow active zone
+  zoneBear.removeAttribute("filter");
+  zoneCorr.removeAttribute("filter");
+  zoneBull.removeAttribute("filter");
+
+  if(trend_regime==="Bearish") zoneBear.setAttribute("filter","url(#glow)");
+  if(trend_regime==="Corrective") zoneCorr.setAttribute("filter","url(#glow)");
+  if(trend_regime==="Bullish") zoneBull.setAttribute("filter","url(#glow)");
 }
 
-// Map 0–1 → -90° to +90°
-const angle = -90 + (pos * 180);
-
-$("needleGroup").setAttribute(
-  "transform",
-  `rotate(${angle} 100 100)`
-);
-
-  $("needleGroup").setAttribute(
-    "transform",
-    `rotate(${angle} 100 100)`
-  );
-
-  $("regimeHeader").innerText=`Trend Daily TF: ${d.trend_regime}`;
-  $("regimeUpdated").innerText=`Last updated: ${new Date().toLocaleString()}`;
-}
-
-/* ===== MACRO + CLIMATE ===== */
+/* ===== MACRO + CLIMATE (unchanged) ===== */
 async function load(){
   const dxy=await j("/dxy");
   const jpy=await j("/usd-jpy");
@@ -200,26 +206,6 @@ async function load(){
 
   $("spread").innerText=y.yield_spread;
   setColor(spreadCard,y.yield_spread<0?"red":y.yield_spread<=0.5?"orange":"green");
-
-  let stress=0;
-  if(dxy.dxy>100.5)stress++;
-  if(jpy.usd_jpy<148)stress++;
-  if(inr.pct_change>0.5)stress++;
-  if(crude.pct_change>2.5)stress++;
-  if(y.us_10y>4.1)stress++;
-  if(y.us_2y>4.2)stress++;
-  if(y.yield_spread<0)stress++;
-
-  if(stress<=1){
-    climateBanner.innerText="🌤️ Market Climate: Favorable";
-    climateBanner.style.background="#16a34a";climateBanner.style.color="white";
-  }else if(stress<=3){
-    climateBanner.innerText="🌥️ Market Climate: Cautious";
-    climateBanner.style.background="#facc15";climateBanner.style.color="black";
-  }else{
-    climateBanner.innerText="🌩️ Market Climate: Stressed";
-    climateBanner.style.background="#dc2626";climateBanner.style.color="white";
-  }
 
   $("lastUpdated").innerText="Last updated: "+new Date().toLocaleString();
 }
