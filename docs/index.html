@@ -12,21 +12,13 @@ tailwind.config = { darkMode: 'class' }
 
 <style>
 .card{
-  position:relative;
-  display:flex;
-  justify-content:space-between;
-  padding:1rem;
-  border-radius:.75rem;
-  border-left-width:4px;
-  background:#fff
+  display:flex;justify-content:space-between;
+  padding:1rem;border-radius:.75rem;
+  border-left-width:4px;background:#fff
 }
 .dark .card{background:#1f2937}
 svg{max-width:100%;height:auto}
-
-/* smooth needle animation */
-#needleGroup{
-  transition: transform 0.8s ease-in-out;
-}
+#needleGroup{transition:transform 0.8s ease-in-out;}
 </style>
 </head>
 
@@ -52,7 +44,7 @@ svg{max-width:100%;height:auto}
   Market Climate: --
 </section>
 
-<!-- SPEEDOMETER REGIME -->
+<!-- REGIME DIAL -->
 <section class="m-4 p-4 rounded-xl bg-white dark:bg-gray-800 text-center">
   <div id="regimeHeader" class="font-semibold mb-1">
     Trend Daily TF: --
@@ -60,41 +52,22 @@ svg{max-width:100%;height:auto}
 
   <svg viewBox="0 0 200 110" class="mx-auto">
     <defs>
-      <filter id="glow">
-        <feGaussianBlur stdDeviation="4" result="blur"/>
-        <feMerge>
-          <feMergeNode in="blur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
+      <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     </defs>
 
-    <!-- zones -->
-    <path id="zoneBear"
-      d="M10 100 A90 90 0 0 1 70 20"
-      stroke="#dc2626" stroke-width="14" fill="none"/>
+    <path id="zoneBear" d="M10 100 A90 90 0 0 1 70 20" stroke="#dc2626" stroke-width="14" fill="none"/>
+    <path id="zoneCorr" d="M70 20 A90 90 0 0 1 130 20" stroke="#facc15" stroke-width="14" fill="none"/>
+    <path id="zoneBull" d="M130 20 A90 90 0 0 1 190 100" stroke="#16a34a" stroke-width="14" fill="none"/>
 
-    <path id="zoneCorr"
-      d="M70 20 A90 90 0 0 1 130 20"
-      stroke="#facc15" stroke-width="14" fill="none"/>
-
-    <path id="zoneBull"
-      d="M130 20 A90 90 0 0 1 190 100"
-      stroke="#16a34a" stroke-width="14" fill="none"/>
-
-    <!-- needle -->
     <g id="needleGroup" transform="rotate(-90 100 100)">
       <line x1="100" y1="100" x2="100" y2="32"
             stroke="#111827" stroke-width="5" stroke-linecap="round"/>
     </g>
-
     <circle cx="100" cy="100" r="7" fill="#111827"/>
   </svg>
 
   <div class="font-semibold mt-1">EMA</div>
-  <div id="regimeUpdated" class="text-xs opacity-70 mt-1">
-    Last updated: --
-  </div>
+  <div id="regimeUpdated" class="text-xs opacity-70 mt-1">Last updated: --</div>
 </section>
 
 <main class="p-4 space-y-10">
@@ -144,34 +117,29 @@ async function j(p){
   try{const r=await fetch(API+p);return r.ok?await r.json():null}catch{return null}
 }
 
-/* ===== REGIME ===== */
+/* === REGIME === */
 async function loadRegime(){
   const d=await j("/market-regime");
   if(!d||!d.close)return;
 
   const { close, ema50, ema200, trend_regime } = d;
-
-  // EMA proximity (continuous but clamped to arc)
-  let pos = (close - ema200) / (ema50 - ema200);
-  pos = Math.max(0, Math.min(1, pos));   // stay on arc
-
-  const angle = -90 + (pos * 180);
+  // continuous EMA proximity mapping
+  let pos=(close-ema200)/(ema50-ema200);
+  pos=Math.max(0,Math.min(1,pos));
+  const angle=-90+(pos*180);
   $("needleGroup").setAttribute("transform",`rotate(${angle} 100 100)`);
 
-  $("regimeHeader").innerText = `Trend Daily TF: ${trend_regime}`;
-  $("regimeUpdated").innerText = "Last updated: " + new Date().toLocaleString();
+  $("regimeHeader").innerText=`Trend Daily TF: ${trend_regime}`;
+  $("regimeUpdated").innerText="Last updated: "+new Date().toLocaleString();
 
-  // glow active zone
-  zoneBear.removeAttribute("filter");
-  zoneCorr.removeAttribute("filter");
-  zoneBull.removeAttribute("filter");
-
-  if(trend_regime==="Bearish") zoneBear.setAttribute("filter","url(#glow)");
-  if(trend_regime==="Corrective") zoneCorr.setAttribute("filter","url(#glow)");
-  if(trend_regime==="Bullish") zoneBull.setAttribute("filter","url(#glow)");
+  // glow on active zone
+  ["zoneBear","zoneCorr","zoneBull"].forEach(z=>$(z).removeAttribute("filter"));
+  if(trend_regime==="Bearish")$("zoneBear").setAttribute("filter","url(#glow)");
+  if(trend_regime==="Corrective")$("zoneCorr").setAttribute("filter","url(#glow)");
+  if(trend_regime==="Bullish")$("zoneBull").setAttribute("filter","url(#glow)");
 }
 
-/* ===== MACRO + CLIMATE (unchanged) ===== */
+/* === MACRO + CLIMATE === */
 async function load(){
   const dxy=await j("/dxy");
   const jpy=await j("/usd-jpy");
@@ -207,10 +175,31 @@ async function load(){
   $("spread").innerText=y.yield_spread;
   setColor(spreadCard,y.yield_spread<0?"red":y.yield_spread<=0.5?"orange":"green");
 
+  // Market Climate
+  let stress=0;
+  if(dxy.dxy>100.5)stress++;
+  if(jpy.usd_jpy<148)stress++;
+  if(inr.pct_change>0.5)stress++;
+  if(crude.pct_change>2.5)stress++;
+  if(y.us_10y>4.1)stress++;
+  if(y.us_2y>4.2)stress++;
+  if(y.yield_spread<0)stress++;
+
+  if(stress<=1){
+    climateBanner.innerText="🌤️ Market Climate: Favorable";
+    climateBanner.style.background="#16a34a";climateBanner.style.color="white";
+  }else if(stress<=3){
+    climateBanner.innerText="🌥️ Market Climate: Cautious";
+    climateBanner.style.background="#facc15";climateBanner.style.color="black";
+  }else{
+    climateBanner.innerText="🌩️ Market Climate: Stressed";
+    climateBanner.style.background="#dc2626";climateBanner.style.color="white";
+  }
+
   $("lastUpdated").innerText="Last updated: "+new Date().toLocaleString();
 }
 
-/* ===== NEWS ===== */
+/* === NEWS === */
 let currentNews="global";
 async function loadNews(region){
   currentNews=region;
@@ -231,22 +220,13 @@ async function loadNews(region){
   }
 }
 
-globalNewsBtn.onclick=()=>{
-  globalNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
-  indiaNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";
-  loadNews("global");
-};
-indiaNewsBtn.onclick=()=>{
-  indiaNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
-  globalNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";
-  loadNews("india");
-};
+globalNewsBtn.onclick=()=>{globalNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
+  indiaNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";loadNews("global");};
+indiaNewsBtn.onclick=()=>{indiaNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
+  globalNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";loadNews("india");};
 
 refreshBtn.onclick=()=>{load();loadRegime();loadNews(currentNews)};
-
-load();
-loadRegime();
-loadNews("global");
+load();loadRegime();loadNews("global");
 </script>
 
 </body>
