@@ -110,5 +110,20 @@ async function loadRegime(){
 loadRegime();
 </script>
 
+  <script>
+function notifyHeight() {
+  const height = document.body.scrollHeight;
+  window.parent.postMessage(
+    { type: "REGIME_HEIGHT", height },
+    "*"
+  );
+}
+
+// Notify on load & resize
+window.addEventListener("load", notifyHeight);
+window.addEventListener("resize", notifyHeight);
+</script>
+
+
 </body>
 </html>
