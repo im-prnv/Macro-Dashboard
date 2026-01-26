@@ -20,92 +20,114 @@ svg{max-width:100%;height:auto}
 <body>
 
 <section class="p-4 rounded-xl bg-gray-800 text-center">
+
+  <!-- HEADER -->
   <div id="regimeHeader" class="font-semibold mb-2">
-    Trend : --
+    Trend Daily TF: --
   </div>
 
+  <!-- DIAL -->
   <svg viewBox="0 0 200 120" class="mx-auto">
 
-    <!-- RED -->
+    <!-- Shadow definition -->
+    <defs>
+      <filter id="needleShadow" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="0" dy="2" stdDeviation="2"
+                      flood-color="#000" flood-opacity="0.35"/>
+      </filter>
+    </defs>
+
+    <!-- RED ZONE -->
     <path d="M20 100 A80 80 0 0 1 60 40"
           stroke="#ef4444" stroke-width="14" fill="none"/>
 
-    <!-- YELLOW -->
+    <!-- YELLOW ZONE -->
     <path d="M60 40 A80 80 0 0 1 140 40"
           stroke="#facc15" stroke-width="14" fill="none"/>
 
-    <!-- GREEN -->
+    <!-- GREEN ZONE -->
     <path d="M140 40 A80 80 0 0 1 180 100"
           stroke="#16a34a" stroke-width="14" fill="none"/>
 
-    <!-- EMA labels (inside ring) -->
-    <!-- EMA 200 -->
-<text x="70" y="52"
-      font-size="12"
-      fill="#e5e7eb"
-      text-anchor="middle"
-      dominant-baseline="middle"
-      transform="rotate(-35 70 52)">
-  200
-</text>
+    <!-- EMA LABELS -->
+    <text x="70" y="52"
+          font-size="12"
+          fill="#e5e7eb"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          transform="rotate(-35 70 52)">
+      200
+    </text>
 
-<!-- EMA 50 -->
-<text x="130" y="52"
-      font-size="12"
-      fill="#e5e7eb"
-      text-anchor="middle"
-      dominant-baseline="middle"
-      transform="rotate(35 130 52)">
-  50
-</text>
+    <text x="130" y="52"
+          font-size="12"
+          fill="#e5e7eb"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          transform="rotate(35 130 52)">
+      50
+    </text>
 
-
-    <!-- Needle -->
+    <!-- NEEDLE -->
     <g id="needle" transform="rotate(-45 100 100)">
       <line x1="100" y1="100" x2="100" y2="55"
-      stroke="#f9fafb" stroke-width="5" stroke-linecap="round"/>
+            stroke="#f9fafb"
+            stroke-width="5"
+            stroke-linecap="round"
+            filter="url(#needleShadow)"/>
     </g>
 
+    <!-- NEEDLE HUB -->
     <circle cx="100" cy="100" r="6" fill="#f9fafb"/>
   </svg>
 
-  <div class="font-bold text-lg mt-1 tracking-wide">EMA</div>
-  <div id="regimeUpdated" class="text-xs opacity-70 mt-1">
+  <!-- EMA LABEL -->
+  <div class="font-bold text-xl tracking-wide -mt-2">
+    EMA
+  </div>
+
+  <!-- UPDATED TIME -->
+  <div id="regimeUpdated" class="text-xs opacity-70 mt-0.5">
     Last updated: --
   </div>
+
 </section>
 
 <script>
-const API="https://macro-dashboard-vk03.onrender.com";
+const API = "https://macro-dashboard-vk03.onrender.com";
 
+/* Fetch regime data */
 async function fetchRegime(){
   try{
-    const r=await fetch(API+"/market-regime");
-    return r.ok?await r.json():null;
+    const r = await fetch(API + "/market-regime");
+    return r.ok ? await r.json() : null;
   }catch{
     return null;
   }
 }
 
+/* Load & render regime */
 async function loadRegime(){
-  const d=await fetchRegime();
+  const d = await fetchRegime();
   if(!d) return;
 
   // % distance from EMA200
-  let pct=((d.close-d.ema200)/d.ema200)*100;
-  pct=Math.max(-2,Math.min(2,pct));
+  let pct = ((d.close - d.ema200) / d.ema200) * 100;
 
-  // map -2..+2 → -90..+30
-  const angle=-30+(pct/2)*60;
+  // clamp to avoid extremes
+  pct = Math.max(-2, Math.min(2, pct));
+
+  // map -2%..+2% → needle angle
+  const angle = -30 + (pct / 2) * 60;
 
   document.getElementById("needle")
-    .setAttribute("transform",`rotate(${angle} 100 100)`);
+    .setAttribute("transform", `rotate(${angle} 100 100)`);
 
   document.getElementById("regimeHeader")
-    .innerText=`Trend Daily TF: ${d.trend_regime}`;
+    .innerText = `Trend Daily TF: ${d.trend_regime}`;
 
   document.getElementById("regimeUpdated")
-    .innerText="Last updated: "+new Date().toLocaleString();
+    .innerText = "Last updated: " + new Date().toLocaleString();
 }
 
 loadRegime();
