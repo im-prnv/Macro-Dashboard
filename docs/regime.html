@@ -10,8 +10,11 @@
 <style>
 body{
   margin:0;
-  background:transparent;
+  background:#0f172a; /* force visible bg */
   color:#e5e7eb;
+}
+section{
+  min-height:260px; /* prevent iframe collapse */
 }
 svg{max-width:100%;height:auto}
 </style>
@@ -48,7 +51,7 @@ svg{max-width:100%;height:auto}
           text-anchor="middle" dominant-baseline="middle"
           transform="rotate(35 130 52)">50</text>
 
-    <!-- Needle -->
+    <!-- Needle (DEFAULT CENTER) -->
     <g id="needle" transform="rotate(0 100 100)">
       <line x1="100" y1="100" x2="100" y2="55"
             stroke="#f9fafb"
@@ -70,56 +73,45 @@ svg{max-width:100%;height:auto}
 <script>
 const API = "https://macro-dashboard-vk03.onrender.com";
 
-async function fetchRegime(){
+async function loadRegime(){
   try{
     const r = await fetch(API + "/market-regime");
-    return r.ok ? await r.json() : null;
-  }catch{
-    return null;
+    if(!r.ok) throw new Error("Fetch failed");
+
+    const d = await r.json();
+
+    // % distance from EMA200 (FINAL LOGIC)
+    let pct = ((d.close - d.ema200) / d.ema200) * 100;
+    pct = Math.max(-2, Math.min(2, pct));
+
+    const angle = (pct / 2) * 90;
+
+    document.getElementById("needle")
+      .setAttribute("transform", `rotate(${angle} 100 100)`);
+
+    document.getElementById("regimeHeader")
+      .innerText = `Trend Daily TF: ${d.trend_regime}`;
+
+    document.getElementById("regimeUpdated")
+      .innerText = "Last updated: " + new Date().toLocaleString();
+
+  }catch(e){
+    // graceful fallback
+    document.getElementById("regimeHeader").innerText =
+      "Trend Daily TF: Data unavailable";
   }
-}
-
-async function loadRegime(){
-  const d = await fetchRegime();
-  if(!d) return;
-
-  // % distance from EMA200 (ONLY LOGIC)
-  let pct = ((d.close - d.ema200) / d.ema200) * 100;
-
-  // clamp for visual sanity
-  pct = Math.max(-2, Math.min(2, pct));
-
-  // map -2..0..+2 → -90..0..+90
-  const angle = (pct / 2) * 90;
-
-  document.getElementById("needle")
-    .setAttribute("transform", `rotate(${angle} 100 100)`);
-
-  document.getElementById("regimeHeader")
-    .innerText = `Trend Daily TF: ${d.trend_regime}`;
-
-  document.getElementById("regimeUpdated")
-    .innerText = "Last updated: " + new Date().toLocaleString();
 
   notifyHeight();
 }
 
-loadRegime();
-</script>
-
-<script>
 function notifyHeight(){
-  const height = document.documentElement.scrollHeight;
-  window.parent.postMessage(
-    { type: "REGIME_HEIGHT", height },
-    "*"
-  );
+  const h = document.documentElement.scrollHeight;
+  window.parent.postMessage({ type:"REGIME_HEIGHT", height:h }, "*");
 }
 
-window.addEventListener("load", notifyHeight);
+window.addEventListener("load", loadRegime);
 window.addEventListener("resize", notifyHeight);
-setTimeout(notifyHeight, 200);
-setTimeout(notifyHeight, 500);
+setTimeout(notifyHeight, 300);
 </script>
 
 </body>
