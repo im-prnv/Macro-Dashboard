@@ -84,7 +84,7 @@ async function loadRegime(){
     let pct = ((d.close - d.ema200) / d.ema200) * 100;
     pct = Math.max(-2, Math.min(2, pct));
 
-    const angle = (pct / 2) * 90;
+    const angle = -(pct / 2) * 90;
 
     document.getElementById("needle")
       .setAttribute("transform", `rotate(${angle} 100 100)`);
