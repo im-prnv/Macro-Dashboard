@@ -223,12 +223,34 @@ window.addEventListener("message", (event) => {
     if (!frame || !container) return;
 
     const MAX_HEIGHT = 260;
-    const h = Math.min(event.data.height, MAX_HEIGHT);
-
+    const h = Math.min(
+  Math.max(event.data.height || 260, 200),
+  MAX_HEIGHT
+);
     frame.style.height = h + "px";
     container.style.height = h + "px";
   }
 });
+</script>
+<script>
+function sendHeight() {
+  const h =
+    document.documentElement.scrollHeight ||
+    document.body.scrollHeight ||
+    280; // fallback
+
+  window.parent.postMessage(
+    { type: "REGIME_HEIGHT", height: h },
+    "*"
+  );
+}
+
+// Fire multiple times to catch SVG + fonts
+window.addEventListener("load", sendHeight);
+setTimeout(sendHeight, 100);
+setTimeout(sendHeight, 300);
+setTimeout(sendHeight, 600);
+window.addEventListener("resize", sendHeight);
 </script>
 
 </body>
