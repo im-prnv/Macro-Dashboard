@@ -53,9 +53,11 @@ svg{max-width:100%;height:auto}
 <!-- REGIME DIAL -->
 <section class="m-4">
   <iframe
+    id="regimeFrame"
     src="regime.html"
     class="w-full rounded-xl"
-    style="height:320px;border:none;">
+    style="border:none;overflow:hidden;"
+    scrolling="no">
   </iframe>
 </section>
 
@@ -225,6 +227,18 @@ load();
 loadRegime();
 loadNews("global");
 </script>
+
+  <script>
+window.addEventListener("message", (event) => {
+  if (event.data?.type === "REGIME_HEIGHT") {
+    const frame = document.getElementById("regimeFrame");
+    if (frame) {
+      frame.style.height = event.data.height + "px";
+    }
+  }
+});
+</script>
+
 
 </body>
 </html>
