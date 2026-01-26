@@ -49,11 +49,17 @@ svg{max-width:100%;height:auto}
           transform="rotate(35 130 52)">50</text>
 
     <!-- Needle -->
-    <g id="needle" transform="rotate(0 100 100)">
-      <line x1="100" y1="100" x2="100" y2="55"
-            stroke="#f9fafb" stroke-width="5"
-            stroke-linecap="round"/>
-    </g>
+  // % distance from EMA200
+let pct = ((d.close - d.ema200) / d.ema200) * 100;
+
+// clamp to realistic visual range
+pct = Math.max(-2, Math.min(2, pct));
+
+// map -2..0..+2 → -90..0..+90
+const angle = (pct / 2) * 90;
+
+document.getElementById("needle")
+  .setAttribute("transform", `rotate(${angle} 100 100)`);
 
     <circle cx="100" cy="100" r="6" fill="#f9fafb"/>
   </svg>
