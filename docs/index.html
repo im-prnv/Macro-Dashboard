@@ -21,6 +21,7 @@ tailwind.config = { darkMode: 'class' }
   background:#fff
 }
 .dark .card{background:#1f2937}
+
 svg{max-width:100%;height:auto}
 </style>
 </head>
@@ -49,37 +50,42 @@ svg{max-width:100%;height:auto}
 
 <!-- SPEEDOMETER REGIME -->
 <section class="m-4 p-4 rounded-xl bg-white dark:bg-gray-800 text-center">
-  <h2 class="font-semibold mb-2">Trend Regime</h2>
+  <div id="regimeHeader" class="font-semibold mb-1">
+    Trend Daily TF: --
+  </div>
 
   <svg viewBox="0 0 200 110" class="mx-auto">
-    <!-- zones -->
+    <!-- Zones -->
     <path d="M10 100 A90 90 0 0 1 70 20" stroke="#dc2626" stroke-width="14" fill="none"/>
     <path d="M70 20 A90 90 0 0 1 130 20" stroke="#facc15" stroke-width="14" fill="none"/>
     <path d="M130 20 A90 90 0 0 1 190 100" stroke="#16a34a" stroke-width="14" fill="none"/>
 
-    <!-- needle -->
-    <line id="needle"
-      x1="100" y1="100"
-      x2="100" y2="34"
-      stroke="#000"
-      stroke-width="4"
-      stroke-linecap="round"
-      transform-origin="100 100"
-      transform="rotate(-90 100 100)"
-    />
+    <!-- Needle group (FORCED VISIBLE) -->
+    <g id="needleGroup"
+       transform="rotate(-90 100 100)"
+       vector-effect="non-scaling-stroke"
+       shape-rendering="geometricPrecision">
+      <line x1="100" y1="100"
+            x2="100" y2="30"
+            stroke="#111827"
+            stroke-width="5"
+            stroke-linecap="round"/>
+    </g>
 
-    <circle cx="100" cy="100" r="6" fill="#000"/>
+    <!-- Center hub -->
+    <circle cx="100" cy="100" r="7" fill="#111827"/>
   </svg>
 
-  <div id="regimeText" class="font-semibold mt-2">--</div>
-  <div class="text-xs opacity-70">Daily • Previous Close</div>
+  <div class="font-semibold mt-1">EMA</div>
+  <div id="regimeUpdated" class="text-xs opacity-70 mt-1">
+    Last updated: --
+  </div>
 </section>
 
 <main class="p-4 space-y-10">
 
 <!-- MACRO CARDS -->
 <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
-
   <div id="dxyCard" class="card"><div>DXY</div><div><div id="dxy">--</div><div id="dxyPct" class="text-sm opacity-70"></div></div></div>
   <div id="jpyCard" class="card"><div>USD / JPY</div><div><div id="usdjpy">--</div><div id="usdjpyPct" class="text-sm opacity-70"></div></div></div>
   <div id="inrCard" class="card"><div>USD / INR</div><div><div id="usdinr">--</div><div id="usdinrPct" class="text-sm opacity-70"></div></div></div>
@@ -87,7 +93,6 @@ svg{max-width:100%;height:auto}
   <div id="us10yCard" class="card"><div>US 10Y</div><div><div id="us10y">--</div><div id="us10yPct" class="text-sm opacity-70"></div></div></div>
   <div id="us2yCard" class="card"><div>US 2Y</div><div><div id="us2y">--</div><div id="us2yPct" class="text-sm opacity-70"></div></div></div>
   <div id="spreadCard" class="card"><div>Yield Spread</div><div><div id="spread">--</div></div></div>
-
 </section>
 
 <!-- NEWS -->
@@ -119,9 +124,8 @@ const t=$("themeToggle");
 const s=localStorage.getItem("theme");
 if(s==="light"){document.documentElement.classList.remove("dark");t.innerText="☀️";}
 else{document.documentElement.classList.add("dark");t.innerText="🌙";}
-t.onclick=()=>{document.documentElement.classList.toggle("dark");};
+t.onclick=()=>document.documentElement.classList.toggle("dark");
 
-// fetch helper
 async function j(p){
   try{const r=await fetch(API+p);return r.ok?await r.json():null}catch{return null}
 }
@@ -135,8 +139,13 @@ async function loadRegime(){
   const clamped=Math.max(-0.2,Math.min(1.2,pos));
   const angle=-90+(clamped*180);
 
-  $("needle").setAttribute("transform",`rotate(${angle} 100 100)`);
-  $("regimeText").innerText=d.trend_regime;
+  $("needleGroup").setAttribute(
+    "transform",
+    `rotate(${angle} 100 100)`
+  );
+
+  $("regimeHeader").innerText=`Trend Daily TF: ${d.trend_regime}`;
+  $("regimeUpdated").innerText=`Last updated: ${new Date().toLocaleString()}`;
 }
 
 /* ===== MACRO + CLIMATE ===== */
@@ -175,7 +184,6 @@ async function load(){
   $("spread").innerText=y.yield_spread;
   setColor(spreadCard,y.yield_spread<0?"red":y.yield_spread<=0.5?"orange":"green");
 
-  // market climate
   let stress=0;
   if(dxy.dxy>100.5)stress++;
   if(jpy.usd_jpy<148)stress++;
