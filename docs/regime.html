@@ -49,17 +49,12 @@ svg{max-width:100%;height:auto}
           transform="rotate(35 130 52)">50</text>
 
     <!-- Needle -->
-  // % distance from EMA200
-let pct = ((d.close - d.ema200) / d.ema200) * 100;
-
-// clamp to realistic visual range
-pct = Math.max(-2, Math.min(2, pct));
-
-// map -2..0..+2 → -90..0..+90
-const angle = (pct / 2) * 90;
-
-document.getElementById("needle")
-  .setAttribute("transform", `rotate(${angle} 100 100)`);
+    <g id="needle" transform="rotate(0 100 100)">
+      <line x1="100" y1="100" x2="100" y2="55"
+            stroke="#f9fafb"
+            stroke-width="5"
+            stroke-linecap="round"/>
+    </g>
 
     <circle cx="100" cy="100" r="6" fill="#f9fafb"/>
   </svg>
@@ -73,7 +68,7 @@ document.getElementById("needle")
 </section>
 
 <script>
-const API="https://macro-dashboard-vk03.onrender.com";
+const API = "https://macro-dashboard-vk03.onrender.com";
 
 async function fetchRegime(){
   try{
@@ -88,14 +83,14 @@ async function loadRegime(){
   const d = await fetchRegime();
   if(!d) return;
 
-  // EMA spread %
-  let spread = ((d.ema50 - d.ema200) / d.ema200) * 100;
+  // % distance from EMA200 (ONLY LOGIC)
+  let pct = ((d.close - d.ema200) / d.ema200) * 100;
 
-  // clamp
-  spread = Math.max(-3, Math.min(3, spread));
+  // clamp for visual sanity
+  pct = Math.max(-2, Math.min(2, pct));
 
-  // map -3..+3 → -90..+90
-  const angle = (spread / 3) * 90;
+  // map -2..0..+2 → -90..0..+90
+  const angle = (pct / 2) * 90;
 
   document.getElementById("needle")
     .setAttribute("transform", `rotate(${angle} 100 100)`);
