@@ -1,153 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Trend Regime</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-body {
-  margin: 0;
-  background: transparent;
-  color: #e5e7eb;
+body{
+  margin:0;
+  background:transparent;
+  color:#e5e7eb;
 }
-svg {
-  max-width: 100%;
-  height: auto;
-}
+svg{max-width:100%;height:auto}
 </style>
 </head>
 
 <body>
 
 <section class="p-4 rounded-xl bg-gray-800 text-center">
-
-  <!-- HEADER -->
   <div id="regimeHeader" class="font-semibold mb-2">
     Trend Daily TF: --
   </div>
 
-  <!-- DIAL -->
   <svg viewBox="0 0 200 120" class="mx-auto">
-
-    <defs>
-      <!-- Needle shadow -->
-      <filter id="needleShadow" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="2" stdDeviation="2"
-          flood-color="#000" flood-opacity="0.35"/>
-      </filter>
-    </defs>
 
     <!-- RED -->
     <path d="M20 100 A80 80 0 0 1 60 40"
-      stroke="#ef4444" stroke-width="14" fill="none"/>
+          stroke="#ef4444" stroke-width="14" fill="none"/>
 
     <!-- YELLOW -->
     <path d="M60 40 A80 80 0 0 1 140 40"
-      stroke="#facc15" stroke-width="14" fill="none"/>
+          stroke="#facc15" stroke-width="14" fill="none"/>
 
     <!-- GREEN -->
     <path d="M140 40 A80 80 0 0 1 180 100"
-      stroke="#16a34a" stroke-width="14" fill="none"/>
+          stroke="#16a34a" stroke-width="14" fill="none"/>
 
-    <!-- EMA LABELS -->
-    <text x="70" y="52"
+    <!-- EMA labels (inside ring) -->
+   <!-- EMA 200 -->
+<text x="70" y="52"
       font-size="12"
       fill="#e5e7eb"
       text-anchor="middle"
       dominant-baseline="middle"
       transform="rotate(-35 70 52)">
-      200
-    </text>
+  200
+</text>
 
-    <text x="130" y="52"
+<!-- EMA 50 -->
+<text x="130" y="52"
       font-size="12"
       fill="#e5e7eb"
       text-anchor="middle"
       dominant-baseline="middle"
       transform="rotate(35 130 52)">
-      50
-    </text>
+  50
+</text>
 
-    <!-- NEEDLE (default visible position) -->
+    <!-- Needle -->
     <g id="needle" transform="rotate(-45 100 100)">
       <line x1="100" y1="100" x2="100" y2="55"
-        stroke="#f9fafb"
-        stroke-width="5"
-        stroke-linecap="round"
-        filter="url(#needleShadow)"/>
+      stroke="#f9fafb" stroke-width="5" stroke-linecap="round"/>
     </g>
 
-    <!-- HUB -->
     <circle cx="100" cy="100" r="6" fill="#f9fafb"/>
   </svg>
 
-  <!-- EMA LABEL -->
-  <div class="font-bold text-xl tracking-wide -mt-2">
-    EMA
-  </div>
-
-  <!-- UPDATED -->
-  <div id="regimeUpdated" class="text-xs opacity-70 mt-0.5">
+  <div class="font-semibold mt-1">EMA</div>
+  <div id="regimeUpdated" class="text-xs opacity-70 mt-1">
     Last updated: --
   </div>
-
 </section>
 
 <script>
-const API = "https://macro-dashboard-vk03.onrender.com";
+const API="https://macro-dashboard-vk03.onrender.com";
 
-/* safe fetch */
-async function fetchRegime() {
-  try {
-    const r = await fetch(API + "/market-regime", { cache: "no-store" });
-    if (!r.ok) return null;
-    return await r.json();
-  } catch {
+async function fetchRegime(){
+  try{
+    const r=await fetch(API+"/market-regime");
+    return r.ok?await r.json():null;
+  }catch{
     return null;
   }
 }
 
-async function loadRegime() {
-  const d = await fetchRegime();
-  if (!d) {
-    console.warn("Regime API unavailable");
-    return;
-  }
-
-  const close = Number(d.close);
-  const ema200 = Number(d.ema200);
-
-  if (!Number.isFinite(close) || !Number.isFinite(ema200)) {
-    console.warn("Invalid regime numbers", d);
-    return;
-  }
+async function loadRegime(){
+  const d=await fetchRegime();
+  if(!d) return;
 
   // % distance from EMA200
-  let pct = ((close - ema200) / ema200) * 100;
+  let pct=((d.close-d.ema200)/d.ema200)*100;
+  pct=Math.max(-2,Math.min(2,pct));
 
-  // clamp visual range
-  pct = Math.max(-2, Math.min(2, pct));
+  // map -2..+2 → -90..+30
+  const angle=-30+(pct/2)*60;
 
-  // map to dial angle
-  const angle = -30 + (pct / 2) * 60;
+  document.getElementById("needle")
+    .setAttribute("transform",`rotate(${angle} 100 100)`);
 
-  const needle = document.getElementById("needle");
-  needle.setAttribute(
-    "transform",
-    `rotate(${angle} 100 100)`
-  );
+  document.getElementById("regimeHeader")
+    .innerText=`Trend Daily TF: ${d.trend_regime}`;
 
-  document.getElementById("regimeHeader").innerText =
-    `Trend Daily TF: ${d.trend_regime ?? "--"}`;
-
-  document.getElementById("regimeUpdated").innerText =
-    "Last updated: " + new Date().toLocaleString();
+  document.getElementById("regimeUpdated")
+    .innerText="Last updated: "+new Date().toLocaleString();
 }
 
-/* ensure needle is always visible */
 loadRegime();
 </script>
 
