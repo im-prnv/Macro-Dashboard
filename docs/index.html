@@ -6,9 +6,7 @@
 <title>Macro Dashboard</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config = { darkMode: 'class' }
-</script>
+<script>tailwind.config={darkMode:'class'}</script>
 
 <style>
 .card{
@@ -21,55 +19,52 @@ svg{max-width:100%;height:auto}
 </style>
 </head>
 
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-100">
 
-<header class="flex justify-between p-4 bg-gray-200 dark:bg-gray-800">
-  <div>
-    <h1 class="text-xl font-semibold">Macro Dashboard</h1>
-    <div id="lastUpdated" class="text-xs opacity-70 mt-1">Last updated: --</div>
-  </div>
+<header class="p-4 bg-gray-800">
+  <h1 class="text-xl font-semibold">Macro Dashboard</h1>
+  <div id="lastUpdated" class="text-xs opacity-70">Last updated: --</div>
 </header>
 
-<!-- MARKET CLIMATE -->
-<section id="climateBanner" class="m-4 p-4 rounded-xl text-center font-semibold text-lg">
+<section id="climateBanner" class="m-4 p-4 rounded-xl text-center font-semibold">
   Market Climate: --
 </section>
 
 <!-- REGIME DIAL -->
-<section class="m-4 p-4 rounded-xl bg-white dark:bg-gray-800 text-center">
-  <div id="regimeHeader" class="font-semibold mb-1">
+<section class="m-4 p-4 rounded-xl bg-gray-800 text-center">
+  <div id="regimeHeader" class="font-semibold mb-2">
     Trend Daily TF: --
   </div>
 
-  <svg viewBox="0 0 200 120" class="mx-auto">
+  <svg viewBox="0 0 200 120">
 
-    <!-- RED (Bearish) -->
-    <path d="M10 100 A90 90 0 0 1 70 30"
-          stroke="#dc2626" stroke-width="14" fill="none"/>
+    <!-- RED : -90 to -30 -->
+    <path d="M20 100 A80 80 0 0 1 60 40"
+          stroke="#ef4444" stroke-width="14" fill="none"/>
 
-    <!-- YELLOW (Corrective) -->
-    <path d="M70 30 A90 90 0 0 1 130 30"
+    <!-- YELLOW : -30 to +30 -->
+    <path d="M60 40 A80 80 0 0 1 140 40"
           stroke="#facc15" stroke-width="14" fill="none"/>
 
-    <!-- GREEN (Bullish) -->
-    <path d="M130 30 A90 90 0 0 1 190 100"
+    <!-- GREEN : +30 to +90 -->
+    <path d="M140 40 A80 80 0 0 1 180 100"
           stroke="#16a34a" stroke-width="14" fill="none"/>
 
-    <!-- EMA labels -->
-    <text x="70" y="25" text-anchor="middle" font-size="10" fill="currentColor">200</text>
-    <text x="130" y="25" text-anchor="middle" font-size="10" fill="currentColor">50</text>
+    <!-- EMA labels INSIDE ring -->
+    <text x="70" y="52" font-size="11" fill="#e5e7eb" text-anchor="middle">200</text>
+    <text x="130" y="52" font-size="11" fill="#e5e7eb" text-anchor="middle">50</text>
 
     <!-- Needle -->
-    <g id="needleGroup" transform="rotate(-30 100 100)">
-      <line x1="100" y1="100" x2="100" y2="35"
-            stroke="#111827" stroke-width="5" stroke-linecap="round"/>
+    <g id="needle" transform="rotate(-45 100 100)">
+      <line x1="100" y1="100" x2="100" y2="45"
+            stroke="#f9fafb" stroke-width="5" stroke-linecap="round"/>
     </g>
 
-    <circle cx="100" cy="100" r="6" fill="#111827"/>
+    <circle cx="100" cy="100" r="6" fill="#f9fafb"/>
   </svg>
 
   <div class="font-semibold mt-1">EMA</div>
-  <div id="regimeUpdated" class="text-xs opacity-70 mt-1">Last updated: --</div>
+  <div id="regimeUpdated" class="text-xs opacity-70">Last updated: --</div>
 </section>
 
 <script>
@@ -80,37 +75,33 @@ async function j(p){
   try{const r=await fetch(API+p);return r.ok?await r.json():null}catch{return null}
 }
 
-/* ===== REGIME LOGIC ===== */
+/* ===== REGIME ===== */
 async function loadRegime(){
   const d=await j("/market-regime");
-  if(!d||!d.close)return;
+  if(!d)return;
 
-  const { close, ema200, trend_regime } = d;
+  const pct=((d.close-d.ema200)/d.ema200)*100;
+  const clamped=Math.max(-2,Math.min(2,pct));
 
-  // % distance from EMA200
-  let pct = ((close - ema200) / ema200) * 100;
+  // map -2%..+2% → -90..+30 (bearish to corrective)
+  const angle = -30 + (clamped/2)*60;
 
-  // clamp between -2% and +2%
-  pct = Math.max(-2, Math.min(2, pct));
-
-  let angle;
-  if(pct <= 0){
-    // Red zone: -90° to -30°
-    angle = -30 + (pct / 2) * 60;
-  }else{
-    // Yellow side: -30° to +30°
-    angle = -30 + (pct / 2) * 60;
-  }
-
-  $("needleGroup").setAttribute(
-    "transform",
-    `rotate(${angle} 100 100)`
-  );
-
-  $("regimeHeader").innerText = `Trend Daily TF: ${trend_regime}`;
-  $("regimeUpdated").innerText = "Last updated: " + new Date().toLocaleString();
+  $("needle").setAttribute("transform",`rotate(${angle} 100 100)`);
+  $("regimeHeader").innerText=`Trend Daily TF: ${d.trend_regime}`;
+  $("regimeUpdated").innerText="Last updated: "+new Date().toLocaleString();
 }
 
+/* ===== MACRO + CLIMATE ===== */
+async function load(){
+  const dxy=await j("/dxy");
+  if(!dxy)return;
+
+  climateBanner.innerText="🌤️ Market Climate: Favorable";
+  climateBanner.style.background="#16a34a";
+  $("lastUpdated").innerText="Last updated: "+new Date().toLocaleString();
+}
+
+load();
 loadRegime();
 </script>
 
