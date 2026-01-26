@@ -51,42 +51,12 @@ svg{max-width:100%;height:auto}
 </section>
 
 <!-- REGIME DIAL -->
-<section class="m-4 p-4 rounded-xl bg-white dark:bg-gray-800 text-center">
-  <div id="regimeHeader" class="font-semibold mb-2">
-    Trend Daily TF: --
-  </div>
-
-  <svg viewBox="0 0 200 120" class="mx-auto">
-
-    <!-- RED -->
-    <path d="M20 100 A80 80 0 0 1 60 40"
-          stroke="#ef4444" stroke-width="14" fill="none"/>
-
-    <!-- YELLOW -->
-    <path d="M60 40 A80 80 0 0 1 140 40"
-          stroke="#facc15" stroke-width="14" fill="none"/>
-
-    <!-- GREEN -->
-    <path d="M140 40 A80 80 0 0 1 180 100"
-          stroke="#16a34a" stroke-width="14" fill="none"/>
-
-    <!-- EMA labels -->
-    <text x="70" y="52" font-size="11" fill="#e5e7eb" text-anchor="middle">200</text>
-    <text x="130" y="52" font-size="11" fill="#e5e7eb" text-anchor="middle">50</text>
-
-    <!-- Needle -->
-    <g id="needle" transform="rotate(-45 100 100)">
-      <line x1="100" y1="100" x2="100" y2="45"
-            stroke="#f9fafb" stroke-width="5" stroke-linecap="round"/>
-    </g>
-
-    <circle cx="100" cy="100" r="6" fill="#f9fafb"/>
-  </svg>
-
-  <div class="font-semibold mt-1">EMA</div>
-  <div id="regimeUpdated" class="text-xs opacity-70 mt-1">
-    Last updated: --
-  </div>
+<section class="m-4">
+  <iframe
+    src="regime.html"
+    class="w-full rounded-xl"
+    style="height:320px;border:none;">
+  </iframe>
 </section>
 
 <!-- MACRO CARDS -->
