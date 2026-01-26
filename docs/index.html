@@ -7,25 +7,22 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-tailwind.config = { darkMode: 'class' }
+  tailwind.config = { darkMode: 'class' }
 </script>
 
 <style>
-  iframe {
-  max-width: 100%;
-}
+  iframe { max-width: 100%; }
 
-.card{
-  position:relative;
-  display:flex;
-  justify-content:space-between;
-  padding:1rem;
-  border-radius:.75rem;
-  border-left-width:4px;
-  background:#fff;
-}
-.dark .card{background:#1f2937}
-svg{max-width:100%;height:auto}
+  .card{
+    position:relative;
+    display:flex;
+    justify-content:space-between;
+    padding:1rem;
+    border-radius:.75rem;
+    border-left-width:4px;
+    background:#fff;
+  }
+  .dark .card{ background:#1f2937 }
 </style>
 </head>
 
@@ -54,44 +51,23 @@ svg{max-width:100%;height:auto}
   Market Climate: --
 </section>
 
-<!-- REGIME DIAL -->
+<!-- REGIME (IFRAME ONLY – NO DOM ACCESS) -->
 <section class="mx-4 mt-2 mb-0">
-  <div
-    id="regimeContainer"
-    style="
-      max-height: 260px;
-      overflow: hidden;
-    "
-  >
+  <div id="regimeContainer"
+       style="max-height:260px; overflow:hidden;">
     <iframe
       id="regimeFrame"
       src="regime.html"
-      style="
-        width: 100%;
-        border: none;
-        display: block;
-      "
-      scrolling="no"
-    ></iframe>
+      style="width:100%; border:none; display:block;"
+      scrolling="no">
+    </iframe>
   </div>
 </section>
-
-
-  <style>
-@media (min-width: 1024px) {
-  #regimeContainer {
-    margin-top: -8px;
-  }
-}
-</style>
-
-
 
 <!-- MACRO CARDS -->
 <main class="p-4 space-y-10">
 
 <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
-
   <div id="dxyCard" class="card"><div>DXY</div><div><div id="dxy">--</div><div id="dxyPct" class="text-sm opacity-70"></div></div></div>
   <div id="jpyCard" class="card"><div>USD / JPY</div><div><div id="usdjpy">--</div><div id="usdjpyPct" class="text-sm opacity-70"></div></div></div>
   <div id="inrCard" class="card"><div>USD / INR</div><div><div id="usdinr">--</div><div id="usdinrPct" class="text-sm opacity-70"></div></div></div>
@@ -99,7 +75,6 @@ svg{max-width:100%;height:auto}
   <div id="us10yCard" class="card"><div>US 10Y</div><div><div id="us10y">--</div><div id="us10yPct" class="text-sm opacity-70"></div></div></div>
   <div id="us2yCard" class="card"><div>US 2Y</div><div><div id="us2y">--</div><div id="us2yPct" class="text-sm opacity-70"></div></div></div>
   <div id="spreadCard" class="card"><div>Yield Spread</div><div><div id="spread">--</div></div></div>
-
 </section>
 
 <!-- NEWS -->
@@ -142,20 +117,6 @@ themeToggle.onclick=()=>{
 async function j(p){
   try{ const r=await fetch(API+p); return r.ok?await r.json():null; }
   catch{ return null; }
-}
-
-/* ===== REGIME ===== */
-async function loadRegime(){
-  const d=await j("/market-regime");
-  if(!d) return;
-
-  const pct=((d.close-d.ema200)/d.ema200)*100;
-  const clamped=Math.max(-2,Math.min(2,pct));
-  const angle=-30+(clamped/2)*60;
-
-  $("needle").setAttribute("transform",`rotate(${angle} 100 100)`);
-  $("regimeHeader").innerText=`Trend Daily TF: ${d.trend_regime}`;
-  $("regimeUpdated").innerText="Last updated: "+new Date().toLocaleString();
 }
 
 /* ===== MACRO + CLIMATE ===== */
@@ -247,22 +208,21 @@ indiaNewsBtn.onclick=()=>{indiaNewsBtn.className="px-3 py-1 rounded-md bg-blue-6
   globalNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";
   loadNews("india");};
 
-refreshBtn.onclick=()=>{ load(); loadRegime(); loadNews(currentNews); };
+refreshBtn.onclick=()=>{ load(); loadNews(currentNews); };
 
 load();
-loadRegime();
 loadNews("global");
 </script>
 
-  <script>
+<!-- iframe height sync ONLY -->
+<script>
 window.addEventListener("message", (event) => {
   if (event.data?.type === "REGIME_HEIGHT") {
     const frame = document.getElementById("regimeFrame");
     const container = document.getElementById("regimeContainer");
     if (!frame || !container) return;
 
-    const MAX_HEIGHT = 320; // fits dial + labels perfectly
-
+    const MAX_HEIGHT = 260;
     const h = Math.min(event.data.height, MAX_HEIGHT);
 
     frame.style.height = h + "px";
@@ -270,9 +230,6 @@ window.addEventListener("message", (event) => {
   }
 });
 </script>
-
-
-
 
 </body>
 </html>
