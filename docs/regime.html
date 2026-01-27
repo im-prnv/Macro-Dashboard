@@ -10,88 +10,91 @@
 <style>
 body{
   margin:0;
-  background:#0f172a; /* or bg-gray-900 */
+  background:#0f172a; /* matches dashboard */
   color:#e5e7eb;
 }
 svg{max-width:100%;height:auto}
 
+/* Trend card colors (same idea as Market Climate) */
 .trend-bullish {
-  background: #16a34a; /* green */
+  background:#16a34a;
 }
-
 .trend-bearish {
-  background: #dc2626; /* red */
+  background:#dc2626;
 }
-
 .trend-correction {
-  background: #facc15; /* yellow */
-  color: #1f2937; /* dark text for contrast */
+  background:#facc15;
+  color:#1f2937;
 }
-
 .trend-neutral {
-  background: #1f2937; /* fallback */
+  background:#1f2937;
 }
 </style>
 </head>
 
 <body>
 
-<section class="p-3 rounded-xl bg-gray-800 text-center">
-  <div id="scaleWrapper" class="origin-top scale-[0.85]">
+<!-- TREND CARD (NO BACKGROUND WRAPPER) -->
+<section class="text-center">
   <div id="regimeHeader"
-       class="m-4 p-4 rounded-xl text-center font-semibold text-lg"> trend-neutral">
-  Trend Daily TF: --
-</div>
-    </section>
-
-  <svg viewBox="0 0 200 110" class="mx-auto">
-
-    <!-- RED -->
-    <path d="M20 100 A80 80 0 0 1 60 40"
-          stroke="#ef4444" stroke-width="14" fill="none"/>
-
-    <!-- YELLOW -->
-    <path d="M60 40 A80 80 0 0 1 140 40"
-          stroke="#facc15" stroke-width="14" fill="none"/>
-
-    <!-- GREEN -->
-    <path d="M140 40 A80 80 0 0 1 180 100"
-          stroke="#16a34a" stroke-width="14" fill="none"/>
-
-    <!-- EMA labels (inside ring) -->
-    <!-- EMA 200 -->
-    <text x="70" y="52"
-          font-size="12"
-          fill="#e5e7eb"
-          text-anchor="middle"
-          dominant-baseline="middle"
-          transform="rotate(-35 70 52)">
-      200
-    </text>
-
-    <!-- EMA 50 -->
-    <text x="130" y="52"
-          font-size="12"
-          fill="#e5e7eb"
-          text-anchor="middle"
-          dominant-baseline="middle"
-          transform="rotate(35 130 52)">
-      50
-    </text>
-
-    <!-- Needle -->
-    <g id="needle" transform="rotate(-45 100 100)">
-      <line x1="100" y1="100" x2="100" y2="55"
-      stroke="#f9fafb" stroke-width="5" stroke-linecap="round"/>
-    </g>
-
-    <circle cx="100" cy="100" r="6" fill="#f9fafb"/>
-  </svg>
-
-  <div class="font-semibold mt-1">EMA</div>
-  <div id="regimeUpdated" class="text-xs opacity-70 mt-1">
-    Last updated: --
+       class="m-4 p-4 rounded-xl font-semibold text-lg trend-neutral">
+    Trend Daily TF: --
   </div>
+</section>
+
+<!-- GAUGE -->
+<section class="p-3 text-center">
+
+<svg viewBox="0 0 200 110" class="mx-auto">
+
+  <!-- RED -->
+  <path d="M20 100 A80 80 0 0 1 60 40"
+        stroke="#ef4444" stroke-width="14" fill="none"/>
+
+  <!-- YELLOW -->
+  <path d="M60 40 A80 80 0 0 1 140 40"
+        stroke="#facc15" stroke-width="14" fill="none"/>
+
+  <!-- GREEN -->
+  <path d="M140 40 A80 80 0 0 1 180 100"
+        stroke="#16a34a" stroke-width="14" fill="none"/>
+
+  <!-- EMA labels -->
+  <text x="70" y="52"
+        font-size="12"
+        fill="#e5e7eb"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        transform="rotate(-35 70 52)">
+    200
+  </text>
+
+  <text x="130" y="52"
+        font-size="12"
+        fill="#e5e7eb"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        transform="rotate(35 130 52)">
+    50
+  </text>
+
+  <!-- NEEDLE (UNCHANGED) -->
+  <g id="needle" transform="rotate(-45 100 100)">
+    <line x1="100" y1="100" x2="100" y2="55"
+          stroke="#f9fafb"
+          stroke-width="5"
+          stroke-linecap="round"/>
+  </g>
+
+  <circle cx="100" cy="100" r="6" fill="#f9fafb"/>
+</svg>
+
+<div class="font-semibold mt-1">EMA</div>
+
+<div id="regimeUpdated" class="text-xs opacity-70 mt-1">
+  Last updated: --
+</div>
+
 </section>
 
 <script>
@@ -110,64 +113,58 @@ async function loadRegime(){
   const d=await fetchRegime();
   if(!d) return;
 
-  // % distance from EMA200
+  /* ===== NEEDLE LOGIC (UNCHANGED) ===== */
   let pct=((d.close-d.ema200)/d.ema200)*100;
   pct=Math.max(-2,Math.min(2,pct));
-
-  // map -2..+2 → -90..+30
   const angle=-30+(pct/2)*60;
 
   document.getElementById("needle")
     .setAttribute("transform",`rotate(${angle} 100 100)`);
 
-  const header = document.getElementById("regimeHeader");
+  /* ===== TREND CARD COLOR ===== */
+  const header=document.getElementById("regimeHeader");
+  header.classList.remove(
+    "trend-bullish",
+    "trend-bearish",
+    "trend-correction",
+    "trend-neutral"
+  );
 
-// reset classes
-header.classList.remove(
-  "trend-bullish",
-  "trend-bearish",
-  "trend-correction",
-  "trend-neutral"
-);
+  header.innerText=`Trend Daily TF: ${d.trend_regime}`;
 
-header.innerText = `Trend Daily TF: ${d.trend_regime}`;
-
-// apply color based on regime
-if (d.trend_regime === "Bullish") {
-  header.classList.add("trend-bullish");
-} 
-else if (d.trend_regime === "Bearish") {
-  header.classList.add("trend-bearish");
-} 
-else if (d.trend_regime === "Correction") {
-  header.classList.add("trend-correction");
-} 
-else {
-  header.classList.add("trend-neutral");
-}
+  if(d.trend_regime==="Bullish"){
+    header.classList.add("trend-bullish");
+  }else if(d.trend_regime==="Bearish"){
+    header.classList.add("trend-bearish");
+  }else if(d.trend_regime==="Correction"){
+    header.classList.add("trend-correction");
+  }else{
+    header.classList.add("trend-neutral");
+  }
 
   document.getElementById("regimeUpdated")
     .innerText="Last updated: "+new Date().toLocaleString();
+
+  notifyHeight();
 }
 
 loadRegime();
 </script>
 
 <script>
-function notifyHeight() {
-  const height = document.documentElement.scrollHeight;
+function notifyHeight(){
+  const height=document.documentElement.scrollHeight;
   window.parent.postMessage(
-    { type: "REGIME_HEIGHT", height },
+    { type:"REGIME_HEIGHT", height },
     "*"
   );
 }
 
-// Run multiple times to catch SVG + font render
-window.addEventListener("load", notifyHeight);
-setTimeout(notifyHeight, 100);
-setTimeout(notifyHeight, 300);
-setTimeout(notifyHeight, 600);
-window.addEventListener("resize", notifyHeight);
+window.addEventListener("load",notifyHeight);
+setTimeout(notifyHeight,100);
+setTimeout(notifyHeight,300);
+setTimeout(notifyHeight,600);
+window.addEventListener("resize",notifyHeight);
 </script>
 
 </body>
