@@ -1,8 +1,8 @@
 {
   "index": "NIFTY 50",
   "trend_regime": "Corrective",
-  "close": 25175.4,
-  "ema50": 25739.91,
-  "ema200": 25162.3,
+  "close": 25342.75,
+  "ema50": 25724.33,
+  "ema200": 25164.1,
   "based_on": "Previous daily close"
 }
