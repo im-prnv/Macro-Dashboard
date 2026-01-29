@@ -9,9 +9,9 @@ DATA_DIR.mkdir(exist_ok=True)
 
 REGIME_FILE = DATA_DIR / "market_regime.json"
 
-# Fetch data
+# Fetch data (DAILY candles only)
 t = yf.Ticker("^NSEI")
-df = t.history(period="max")
+df = t.history(period="max", interval="1d")
 
 if df.empty or len(df) < 200:
     raise Exception("Not enough data to calculate EMA")
@@ -20,11 +20,15 @@ if df.empty or len(df) < 200:
 df["EMA50"] = df["Close"].ewm(span=50, adjust=False).mean()
 df["EMA200"] = df["Close"].ewm(span=200, adjust=False).mean()
 
+# Last completed candle
+last_idx = df.index[-1]
+as_of_date = last_idx.strftime("%Y-%m-%d")
+
 close = float(df["Close"].iloc[-1])
 ema50 = float(df["EMA50"].iloc[-1])
 ema200 = float(df["EMA200"].iloc[-1])
 
-# Regime logic
+# Regime logic (UNCHANGED)
 if close > ema50 and ema50 > ema200:
     regime = "Bullish"
 elif close < ema50 and close > ema200:
@@ -38,6 +42,7 @@ output = {
     "close": round(close, 2),
     "ema50": round(ema50, 2),
     "ema200": round(ema200, 2),
+    "as_of": as_of_date,
     "based_on": "Previous daily close"
 }
 
