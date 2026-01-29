@@ -4,5 +4,6 @@
   "close": 25418.9,
   "ema50": 25712.36,
   "ema200": 25166.63,
-  "as_of": as_of_date,
+  "as_of": "2026-01-29",
+  "based_on": "Previous daily close"
 }
