@@ -52,52 +52,63 @@
 </section>
 
 <!-- REGIME INLINE -->
-  <!-- TREND REGIME (INLINE) -->
-<section class="mx-4 mt-3 p-4 rounded-xl bg-slate-800 text-center">
+  <!-- TREND REGIME -->
+<section class="mx-4 mt-3 p-4 rounded-xl bg-white dark:bg-slate-800 text-center">
 
-  <div
-    id="regimeHeader"
-    class="mb-3 px-4 py-2 rounded-full font-semibold text-lg bg-yellow-400 text-black">
-    Trend Daily TF: --
+  <div id="regimeHeader"
+       class="mb-3 px-4 py-2 rounded-full font-semibold text-lg bg-gray-700 dark:bg-slate-700 text-white">
+    Trend : --
   </div>
 
-  <svg
-    viewBox="0 0 200 110"
-    class="mx-auto"
-    width="100%"
-    style="max-width:420px">
+  <svg viewBox="0 0 200 110" class="mx-auto max-w-[420px]">
 
-    <!-- RED -->
-    <path d="M10,100 A90,90 0 0,1 70,25"
-          fill="none" stroke="#ef4444" stroke-width="18"/>
+    <!-- RED (Below 200 EMA) -->
+    <path d="M20 100 A80 80 0 0 1 70 40"
+          stroke="#ef4444" stroke-width="14" fill="none"/>
 
-    <!-- YELLOW -->
-    <path d="M70,25 A90,90 0 0,1 130,25"
-          fill="none" stroke="#facc15" stroke-width="18"/>
+    <!-- YELLOW (200–50 EMA) -->
+    <path d="M70 40 A80 80 0 0 1 130 40"
+          stroke="#facc15" stroke-width="14" fill="none"/>
 
-    <!-- GREEN -->
-    <path d="M130,25 A90,90 0 0,1 190,100"
-          fill="none" stroke="#16a34a" stroke-width="18"/>
+    <!-- GREEN (Above 50 EMA) -->
+    <path d="M130 40 A80 80 0 0 1 180 100"
+          stroke="#16a34a" stroke-width="14" fill="none"/>
 
-    <!-- LABELS -->
-    <text x="75" y="38" font-size="12" fill="#e5e7eb"
-          transform="rotate(-28 75 38)">200</text>
+    <!-- EMA boundary labels -->
+    <text x="70" y="50"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          class="fill-gray-700 dark:fill-gray-200 text-xs"
+          transform="rotate(-30 70 50)">200</text>
 
-    <text x="125" y="38" font-size="12" fill="#e5e7eb"
-          transform="rotate(28 125 38)">50</text>
+    <text x="130" y="50"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          class="fill-gray-700 dark:fill-gray-200 text-xs"
+          transform="rotate(30 130 50)">50</text>
 
     <!-- NEEDLE -->
-    <g id="needle" transform="rotate(0 100 100)">
-      <line x1="100" y1="100" x2="100" y2="40"
-            stroke="white" stroke-width="5"
-            stroke-linecap="round"
-            style="filter: drop-shadow(0 0 6px rgba(255,255,255,.4))"/>
-      <circle cx="100" cy="100" r="7" fill="white"/>
+    <g id="needle" transform="rotate(-30 100 100)">
+      <line x1="100" y1="100" x2="100" y2="55"
+            stroke="#111827" stroke-width="7"
+            stroke-linecap="round"/>
+      <line x1="100" y1="100" x2="100" y2="55"
+            stroke="#f9fafb" stroke-width="4"
+            stroke-linecap="round"/>
     </g>
+
+    <!-- PIVOT -->
+    <circle cx="100" cy="100" r="7" fill="#111827"/>
+    <circle cx="100" cy="100" r="5" fill="#f9fafb"/>
+
   </svg>
 
-  <div class="mt-2 text-sm opacity-70" id="regimeUpdated">
-    --
+  <div class="font-semibold mt-1 text-gray-700 dark:text-gray-200">
+    EMA
+  </div>
+
+  <div id="regimeUpdated" class="text-xs opacity-70 mt-1">
+    As of: --
   </div>
 </section>
 
@@ -250,23 +261,39 @@ async function loadRegime(){
   const d = await j("/market-regime");
   if(!d) return;
 
-  // % distance from 200 EMA (clamped)
-  const pct = ((d.close - d.ema200) / d.ema200) * 100;
-  const clamped = Math.max(-2, Math.min(2, pct));
-
-  // Map -2%..+2% → -30°..+30°
-  const angle = (clamped / 2) * 60;
+  // Needle logic (unchanged, correct)
+  let pct = ((d.close - d.ema200) / d.ema200) * 100;
+  pct = Math.max(-2, Math.min(2, pct));
+  const angle = -30 + (pct / 2) * 60;
 
   $("needle").setAttribute(
     "transform",
     `rotate(${angle} 100 100)`
   );
 
-  $("regimeHeader").innerText =
-    `Trend Daily TF: ${d.trend_regime}`;
+  const header = $("regimeHeader");
+  header.className =
+    "mb-3 px-4 py-2 rounded-full font-semibold text-lg text-black";
+
+  header.innerText = `Trend : ${d.trend_regime}`;
+
+  const r = d.trend_regime.toLowerCase();
+  if(r === "bullish"){
+    header.style.background = "#16a34a";
+    header.style.color = "white";
+  }else if(r === "bearish"){
+    header.style.background = "#dc2626";
+    header.style.color = "white";
+  }else if(r === "correction" || r === "corrective"){
+    header.style.background = "#facc15";
+    header.style.color = "#1f2937";
+  }else{
+    header.style.background = "#334155";
+    header.style.color = "white";
+  }
 
   $("regimeUpdated").innerText =
-    "Last updated: " + new Date().toLocaleString();
+    d.as_of ? "As of: " + d.as_of : "As of: Previous close";
 }
 
 refreshBtn.onclick=()=>{ load(); loadNews(currentNews); loadRegime(); };
