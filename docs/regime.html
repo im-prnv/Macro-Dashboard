@@ -143,7 +143,9 @@ async function loadRegime(){
   }
 
   document.getElementById("regimeUpdated")
-    .innerText="Last updated: "+if (d.as_of) {
+    .innerText="Last updated: "
+
+if (d.as_of) {
   document.getElementById("regimeUpdated")
     .innerText = "As of: " + d.as_of;
 } else {
