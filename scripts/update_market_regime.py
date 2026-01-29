@@ -28,7 +28,7 @@ ema200 = float(df["EMA200"].iloc[-1])
 if close > ema50 and ema50 > ema200:
     regime = "Bullish"
 elif close < ema50 and close > ema200:
-    regime = "Corrective"
+    regime = "Correction"
 else:
     regime = "Bearish"
 
