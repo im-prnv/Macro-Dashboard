@@ -10,31 +10,25 @@
 <style>
 body{
   margin:0;
-  background:#0f172a; /* matches dashboard */
+  background:#0f172a; /* dashboard background */
   color:#e5e7eb;
 }
 svg{max-width:100%;height:auto}
 
-/* Trend card colors (same idea as Market Climate) */
-.trend-bullish {
-  background:#16a34a;
-}
-.trend-bearish {
-  background:#dc2626;
-}
+/* Trend card colors */
+.trend-bullish { background:#16a34a; }
+.trend-bearish { background:#dc2626; }
 .trend-correction {
   background:#facc15;
   color:#1f2937;
 }
-.trend-neutral {
-  background:#1f2937;
-}
+.trend-neutral { background:#1f2937; }
 </style>
 </head>
 
 <body>
 
-<!-- TREND CARD (NO BACKGROUND WRAPPER) -->
+<!-- TREND CARD -->
 <section class="text-center">
   <div id="regimeHeader"
        class="m-4 p-4 rounded-xl font-semibold text-lg trend-neutral">
@@ -46,6 +40,21 @@ svg{max-width:100%;height:auto}
 <section class="p-3 text-center">
 
 <svg viewBox="0 0 200 110" class="mx-auto">
+
+  <!-- DEFINITIONS (MUST COME FIRST) -->
+  <defs>
+    <!-- Needle shadow -->
+    <filter id="needleShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.5"
+                    flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+
+    <!-- Center pivot shadow -->
+    <filter id="pivotShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2"
+                    flood-color="#000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
 
   <!-- RED -->
   <path d="M20 100 A80 80 0 0 1 60 40"
@@ -60,46 +69,33 @@ svg{max-width:100%;height:auto}
         stroke="#16a34a" stroke-width="14" fill="none"/>
 
   <!-- EMA labels -->
-  <text x="70" y="52"
-        font-size="12"
-        fill="#e5e7eb"
-        text-anchor="middle"
-        dominant-baseline="middle"
-        transform="rotate(-35 70 52)">
-    200
-  </text>
+  <text x="70" y="52" font-size="12" fill="#e5e7eb"
+        text-anchor="middle" dominant-baseline="middle"
+        transform="rotate(-35 70 52)">200</text>
 
-  <text x="130" y="52"
-        font-size="12"
-        fill="#e5e7eb"
-        text-anchor="middle"
-        dominant-baseline="middle"
-        transform="rotate(35 130 52)">
-    50
-  </text>
+  <text x="130" y="52" font-size="12" fill="#e5e7eb"
+        text-anchor="middle" dominant-baseline="middle"
+        transform="rotate(35 130 52)">50</text>
 
-  <!-- NEEDLE (UNCHANGED) -->
-   <defs>
-  <filter id="needleShadow" x="-50%" y="-50%" width="200%" height="200%">
-    <feDropShadow dx="0" dy="1" stdDeviation="1.5"
-                  flood-color="#000" flood-opacity="0.5"/>
-  </filter>
-</defs>
+  <!-- NEEDLE (LOGIC UNCHANGED) -->
   <g id="needle" transform="rotate(-45 100 100)">
     <line x1="100" y1="100" x2="100" y2="55"
-      filter="url(#needleShadow)"
           stroke="#f9fafb"
           stroke-width="5"
-          stroke-linecap="round"/>
+          stroke-linecap="round"
+          filter="url(#needleShadow)"/>
   </g>
 
-  <circle cx="100" cy="100" r="6" fill="#f9fafb"/>
+  <!-- CENTER PIVOT -->
+  <circle cx="100" cy="100" r="6"
+          fill="#f9fafb"
+          filter="url(#pivotShadow)"/>
 </svg>
 
 <div class="font-semibold mt-1">EMA</div>
 
 <div id="regimeUpdated" class="text-xs opacity-70 mt-1">
-  Last updated: --
+  As of: --
 </div>
 
 </section>
@@ -110,7 +106,7 @@ const API="https://macro-dashboard-vk03.onrender.com";
 async function fetchRegime(){
   try{
     const r=await fetch(API+"/market-regime");
-    return r.ok?await r.json():null;
+    return r.ok ? await r.json() : null;
   }catch{
     return null;
   }
@@ -137,28 +133,21 @@ async function loadRegime(){
     "trend-neutral"
   );
 
-  header.innerText=`Trend Daily TF: ${d.trend_regime}`;
+  header.innerText=`Trend : ${d.trend_regime}`;
 
-  if(d.trend_regime==="Bullish"){
+  const r=d.trend_regime.toLowerCase();
+  if(r==="bullish"){
     header.classList.add("trend-bullish");
-  }else if(d.trend_regime==="Bearish"){
+  }else if(r==="bearish"){
     header.classList.add("trend-bearish");
-  }else if(d.trend_regime==="Correction"){
+  }else if(r==="correction" || r==="corrective"){
     header.classList.add("trend-correction");
   }else{
     header.classList.add("trend-neutral");
   }
 
-  document.getElementById("regimeUpdated")
-    .innerText="Last updated: "
-
-if (d.as_of) {
-  document.getElementById("regimeUpdated")
-    .innerText = "As of: " + d.as_of;
-} else {
-  document.getElementById("regimeUpdated")
-    .innerText = "As of: Previous close";
-};
+  document.getElementById("regimeUpdated").innerText =
+    d.as_of ? "As of: " + d.as_of : "As of: Previous close";
 
   notifyHeight();
 }
