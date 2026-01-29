@@ -10,7 +10,7 @@
 <style>
 body{
   margin:0;
-  background:#0f172a; /* dashboard background */
+  background:#0f172a;
   color:#e5e7eb;
 }
 svg{max-width:100%;height:auto}
@@ -41,21 +41,6 @@ svg{max-width:100%;height:auto}
 
 <svg viewBox="0 0 200 110" class="mx-auto">
 
-  <!-- DEFINITIONS (MUST COME FIRST) -->
-  <defs>
-    <!-- Needle shadow -->
-    <filter id="needleShadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="1" stdDeviation="1.5"
-                    flood-color="#000" flood-opacity="0.5"/>
-    </filter>
-
-    <!-- Center pivot shadow -->
-    <filter id="pivotShadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="1" stdDeviation="2"
-                    flood-color="#000" flood-opacity="0.6"/>
-    </filter>
-  </defs>
-
   <!-- RED -->
   <path d="M20 100 A80 80 0 0 1 60 40"
         stroke="#ef4444" stroke-width="14" fill="none"/>
@@ -77,19 +62,27 @@ svg{max-width:100%;height:auto}
         text-anchor="middle" dominant-baseline="middle"
         transform="rotate(35 130 52)">50</text>
 
-  <!-- NEEDLE (LOGIC UNCHANGED) -->
+  <!-- NEEDLE (OUTLINE METHOD – GUARANTEED VISIBLE) -->
   <g id="needle" transform="rotate(-45 100 100)">
+
+    <!-- dark outline -->
+    <line x1="100" y1="100" x2="100" y2="55"
+          stroke="#111827"
+          stroke-width="7"
+          stroke-linecap="round"/>
+
+    <!-- light core -->
     <line x1="100" y1="100" x2="100" y2="55"
           stroke="#f9fafb"
-          stroke-width="5"
-          stroke-linecap="round"
-          filter="url(#needleShadow)"/>
+          stroke-width="4"
+          stroke-linecap="round"/>
+
   </g>
 
-  <!-- CENTER PIVOT -->
-  <circle cx="100" cy="100" r="6"
-          fill="#f9fafb"
-          filter="url(#pivotShadow)"/>
+  <!-- CENTER PIVOT (OUTLINED) -->
+  <circle cx="100" cy="100" r="7" fill="#111827"/>
+  <circle cx="100" cy="100" r="5" fill="#f9fafb"/>
+
 </svg>
 
 <div class="font-semibold mt-1">EMA</div>
@@ -106,7 +99,7 @@ const API="https://macro-dashboard-vk03.onrender.com";
 async function fetchRegime(){
   try{
     const r=await fetch(API+"/market-regime");
-    return r.ok ? await r.json() : null;
+    return r.ok?await r.json():null;
   }catch{
     return null;
   }
@@ -124,7 +117,7 @@ async function loadRegime(){
   document.getElementById("needle")
     .setAttribute("transform",`rotate(${angle} 100 100)`);
 
-  /* ===== TREND CARD COLOR ===== */
+  /* ===== TREND CARD ===== */
   const header=document.getElementById("regimeHeader");
   header.classList.remove(
     "trend-bullish",
