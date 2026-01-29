@@ -74,18 +74,37 @@
     <path d="M130 40 A80 80 0 0 1 180 100"
           stroke="#16a34a" stroke-width="14" fill="none"/>
 
-    <!-- EMA boundary labels -->
-    <text x="70" y="50"
-          text-anchor="middle"
-          dominant-baseline="middle"
-          class="fill-gray-700 dark:fill-gray-200 text-xs"
-          transform="rotate(-30 70 50)">200</text>
+    <!-- EMA boundary labels (polar placement) -->
 
-    <text x="130" y="50"
-          text-anchor="middle"
-          dominant-baseline="middle"
-          class="fill-gray-700 dark:fill-gray-200 text-xs"
-          transform="rotate(30 130 50)">50</text>
+<!-- 200 EMA @ -15° -->
+<text
+  x="100"
+  y="100"
+  text-anchor="middle"
+  dominant-baseline="middle"
+  class="fill-gray-700 dark:fill-gray-200 text-xs"
+  transform="
+    rotate(-15 100 100)
+    translate(0 -58)
+    rotate(15)
+  ">
+  200
+</text>
+
+<!-- 50 EMA @ +15° -->
+<text
+  x="100"
+  y="100"
+  text-anchor="middle"
+  dominant-baseline="middle"
+  class="fill-gray-700 dark:fill-gray-200 text-xs"
+  transform="
+    rotate(15 100 100)
+    translate(0 -58)
+    rotate(-15)
+  ">
+  50
+</text>
 
     <!-- NEEDLE -->
     <g id="needle" transform="rotate(-30 100 100)">
