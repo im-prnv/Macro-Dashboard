@@ -51,18 +51,56 @@
   Market Climate: --
 </section>
 
-<!-- REGIME (IFRAME ONLY – NO DOM ACCESS) -->
-<section class="mx-4 mt-2 mb-0">
-  <div id="regimeContainer"
-       style="max-height:260px; overflow:hidden;">
-    <iframe
-      id="regimeFrame"
-      src="regime.html"
-      style="width:100%; border:none; display:block;"
-      scrolling="no">
-    </iframe>
+<!-- REGIME INLINE -->
+  <!-- TREND REGIME (INLINE) -->
+<section class="mx-4 mt-3 p-4 rounded-xl bg-slate-800 text-center">
+
+  <div
+    id="regimeHeader"
+    class="mb-3 px-4 py-2 rounded-full font-semibold text-lg bg-yellow-400 text-black">
+    Trend Daily TF: --
+  </div>
+
+  <svg
+    viewBox="0 0 200 110"
+    class="mx-auto"
+    width="100%"
+    style="max-width:420px">
+
+    <!-- RED -->
+    <path d="M10,100 A90,90 0 0,1 70,25"
+          fill="none" stroke="#ef4444" stroke-width="18"/>
+
+    <!-- YELLOW -->
+    <path d="M70,25 A90,90 0 0,1 130,25"
+          fill="none" stroke="#facc15" stroke-width="18"/>
+
+    <!-- GREEN -->
+    <path d="M130,25 A90,90 0 0,1 190,100"
+          fill="none" stroke="#16a34a" stroke-width="18"/>
+
+    <!-- LABELS -->
+    <text x="75" y="38" font-size="12" fill="#e5e7eb"
+          transform="rotate(-28 75 38)">200</text>
+
+    <text x="125" y="38" font-size="12" fill="#e5e7eb"
+          transform="rotate(28 125 38)">50</text>
+
+    <!-- NEEDLE -->
+    <g id="needle" transform="rotate(0 100 100)">
+      <line x1="100" y1="100" x2="100" y2="40"
+            stroke="white" stroke-width="5"
+            stroke-linecap="round"
+            style="filter: drop-shadow(0 0 6px rgba(255,255,255,.4))"/>
+      <circle cx="100" cy="100" r="7" fill="white"/>
+    </g>
+  </svg>
+
+  <div class="mt-2 text-sm opacity-70" id="regimeUpdated">
+    --
   </div>
 </section>
+
 
 <!-- MACRO CARDS -->
 <main class="p-4 space-y-10">
@@ -208,10 +246,34 @@ indiaNewsBtn.onclick=()=>{indiaNewsBtn.className="px-3 py-1 rounded-md bg-blue-6
   globalNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";
   loadNews("india");};
 
-refreshBtn.onclick=()=>{ load(); loadNews(currentNews); };
+async function loadRegime(){
+  const d = await j("/market-regime");
+  if(!d) return;
+
+  // % distance from 200 EMA (clamped)
+  const pct = ((d.close - d.ema200) / d.ema200) * 100;
+  const clamped = Math.max(-2, Math.min(2, pct));
+
+  // Map -2%..+2% → -30°..+30°
+  const angle = (clamped / 2) * 60;
+
+  $("needle").setAttribute(
+    "transform",
+    `rotate(${angle} 100 100)`
+  );
+
+  $("regimeHeader").innerText =
+    `Trend Daily TF: ${d.trend_regime}`;
+
+  $("regimeUpdated").innerText =
+    "Last updated: " + new Date().toLocaleString();
+}
+
+refreshBtn.onclick=()=>{ load(); loadNews(currentNews); loadRegime(); };
 
 load();
 loadNews("global");
+loadRegime();
 </script>
 
 <!-- iframe height sync ONLY -->
