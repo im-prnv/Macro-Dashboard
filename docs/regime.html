@@ -79,8 +79,15 @@ svg{max-width:100%;height:auto}
   </text>
 
   <!-- NEEDLE (UNCHANGED) -->
+   <defs>
+  <filter id="needleShadow" x="-50%" y="-50%" width="200%" height="200%">
+    <feDropShadow dx="0" dy="1" stdDeviation="1.5"
+                  flood-color="#000" flood-opacity="0.5"/>
+  </filter>
+</defs>
   <g id="needle" transform="rotate(-45 100 100)">
     <line x1="100" y1="100" x2="100" y2="55"
+      filter="url(#needleShadow)"
           stroke="#f9fafb"
           stroke-width="5"
           stroke-linecap="round"/>
