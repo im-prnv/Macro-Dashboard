@@ -1,9 +1,9 @@
 {
   "index": "NIFTY 50",
   "trend_regime": "Correction",
-  "close": 25418.9,
-  "ema50": 25712.36,
-  "ema200": 25166.63,
-  "as_of": "2026-01-29",
+  "close": 25320.65,
+  "ema50": 25697.0,
+  "ema200": 25168.16,
+  "as_of": "2026-01-30",
   "based_on": "Previous daily close"
 }
