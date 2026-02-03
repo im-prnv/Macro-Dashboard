@@ -41,17 +41,28 @@ svg{max-width:100%;height:auto}
 
 <svg viewBox="0 0 200 110" class="mx-auto">
 
-  <!-- RED -->
-  <path d="M20 100 A80 80 0 0 1 60 40"
-        stroke="#ef4444" stroke-width="14" fill="none"/>
+  <!-- 180° ARC – PERFECTLY SPLIT -->
 
-  <!-- YELLOW -->
-  <path d="M60 40 A80 80 0 0 1 140 40"
-        stroke="#facc15" stroke-width="14" fill="none"/>
+<!-- RED (180° → 120°) -->
+<path d="
+  M 20 100
+  A 80 80 0 0 1 60 30
+"
+stroke="#ef4444" stroke-width="14" fill="none"/>
 
-  <!-- GREEN -->
-  <path d="M140 40 A80 80 0 0 1 180 100"
-        stroke="#16a34a" stroke-width="14" fill="none"/>
+<!-- YELLOW (120° → 60°) -->
+<path d="
+  M 60 30
+  A 80 80 0 0 1 140 30
+"
+stroke="#facc15" stroke-width="14" fill="none"/>
+
+<!-- GREEN (60° → 0°) -->
+<path d="
+  M 140 30
+  A 80 80 0 0 1 180 100
+"
+stroke="#16a34a" stroke-width="14" fill="none"/>
 
   <!-- EMA labels -->
   <text x="70" y="52" font-size="12" fill="#e5e7eb"
