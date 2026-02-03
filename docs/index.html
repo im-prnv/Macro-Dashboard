@@ -87,27 +87,29 @@ stroke="#16a34a" stroke-width="14" fill="none"/>
 
     <!-- EMA boundary labels (polar placement) -->
 
-<!-- EMA labels (180° gauge – visually aligned) -->
+<!-- EMA labels (180° gauge – boundary-accurate & closer to arc) -->
 
-<!-- 200 EMA -->
+<!-- 200 EMA (Red → Yellow boundary @ -30°) -->
 <text
-  x="70"
-  y="60"
+  x="74"
+  y="54"
   font-size="13"
   fill="#e5e7eb"
   text-anchor="middle"
-  transform="rotate(-30 70 60)">
+  dominant-baseline="middle"
+  transform="rotate(-30 74 54)">
   200
 </text>
 
-<!-- 50 EMA -->
+<!-- 50 EMA (Yellow → Green boundary @ +30°) -->
 <text
-  x="130"
-  y="60"
+  x="126"
+  y="54"
   font-size="13"
   fill="#e5e7eb"
   text-anchor="middle"
-  transform="rotate(30 130 60)">
+  dominant-baseline="middle"
+  transform="rotate(30 126 54)">
   50
 </text>
 
