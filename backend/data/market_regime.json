@@ -1,9 +1,9 @@
 {
   "index": "NIFTY 50",
-  "trend_regime": "Bullish",
-  "close": 25713.0,
-  "ema50": 25691.48,
-  "ema200": 25244.43,
-  "as_of": "2026-02-23",
+  "trend_regime": "Correction",
+  "close": 25424.65,
+  "ema50": 25681.02,
+  "ema200": 25246.22,
+  "as_of": "2026-02-24",
   "based_on": "Previous daily close"
 }
