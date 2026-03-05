@@ -130,17 +130,12 @@
     to { stroke-dashoffset: 0; }
   }
 
-  /* Needle: starts pointing straight up (0deg = 12 o'clock = middle of gauge)
-     Entry: sweeps in from -90deg (far left), ends at 0 (centre) then JS sets final */
+  /* Needle: starts at -90deg (far left = bearish end).
+     JS sets the final rotation after a short delay → creates a sweep animation via CSS transition. */
   #needle {
-    transform-box: fill-box;
-    transform-origin: center;
-    transition: transform 1s cubic-bezier(.34,1.4,.64,1);
-    animation: needleSweep 1s .9s cubic-bezier(.34,1.3,.64,1) both;
-  }
-  @keyframes needleSweep {
-    from { transform: rotate(-90deg); }
-    to   { transform: rotate(0deg); }
+    transform-origin: 160px 160px;
+    transform: rotate(-90deg);
+    transition: transform 1.4s cubic-bezier(.25, 1.4, .5, 1);
   }
 
   /* Pivot glow pulse */
@@ -316,16 +311,20 @@
       stroke="#22c55e" stroke-width="22" fill="none"
       stroke-linecap="round" filter="url(#glowGreen)"/>
 
-    <!-- Divider ticks between segments -->
+    <!-- Divider ticks between segments (gap lines at 120° and 60° boundaries) -->
     <line x1="100" y1="56.1" x2="117" y2="75"
       stroke="#0d1220" stroke-width="4" stroke-linecap="round"/>
     <line x1="220" y1="56.1" x2="203" y2="75"
       stroke="#0d1220" stroke-width="4" stroke-linecap="round"/>
 
-    <!-- EMA labels -->
-    <text x="76" y="106" font-size="15" fill="#94a3b8"
+    <!--
+      EMA labels positioned on radial lines at r=90 (inside the arc, r=120):
+      120° label at r=90: x=160+90·cos120=160-45=115, y=160-90·sin120=160-77.9≈82
+       60° label at r=90: x=160+90·cos60=160+45=205,  y=160-90·sin60=160-77.9≈82
+    -->
+    <text x="108" y="88" font-size="14" fill="#cbd5e1"
       font-family="Space Mono, monospace" text-anchor="middle" font-weight="700">200</text>
-    <text x="244" y="106" font-size="15" fill="#94a3b8"
+    <text x="212" y="88" font-size="14" fill="#cbd5e1"
       font-family="Space Mono, monospace" text-anchor="middle" font-weight="700">50</text>
 
     <!--
@@ -510,15 +509,28 @@ async function loadRegime(){
   const d = await j("/market-regime");
   if(!d) return;
 
-  // Map pct-from-EMA200 → rotation angle [-90°, +90°]
+  /*
+    Gauge geometry (viewBox 320×185, pivot at 160,160, r=120):
+      Left end  (bearish)  = 180° in standard math = needle rotated -90deg in CSS
+      Centre    (neutral)  =  90° in standard math = needle rotated   0deg in CSS
+      Right end (bullish)  =   0° in standard math = needle rotated +90deg in CSS
+
+    Original code mapped:  angle = -30 + (pct/2)*60  for a -30..+30° range on old gauge.
+    New mapping: pct ∈ [-2, +2] → CSS rotation ∈ [-90°, +90°]
+    Formula: cssAngle = (pct / 2) * 90
+  */
   let pct = ((d.close - d.ema200) / d.ema200) * 100;
   pct = Math.max(-2, Math.min(2, pct));
-  const angle = (pct / 2) * 90;
+  const cssAngle = (pct / 2) * 90;   // -90 = far left, 0 = centre, +90 = far right
 
-  // Wait for entry animation to finish (runs for ~1.9s total), then set real position
-  setTimeout(() => {
-    $("needle").style.transform = `rotate(${angle}deg)`;
-  }, 2000);
+  // Needle starts at -90deg (CSS default above).
+  // Setting transform triggers the CSS transition → smooth sweep to final position.
+  // Small delay so transition isn't skipped on first paint.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      $("needle").style.transform = `rotate(${cssAngle}deg)`;
+    });
+  });
 
   const header = $("regimeHeader");
   header.innerText = `Trend : ${d.trend_regime}`;
