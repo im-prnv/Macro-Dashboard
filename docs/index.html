@@ -10,167 +10,425 @@
   tailwind.config = { darkMode: 'class' }
 </script>
 
-<style>
-  iframe { max-width: 100%; }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-  .card{
-    position:relative;
-    display:flex;
-    justify-content:space-between;
-    padding:1rem;
-    border-radius:.75rem;
-    border-left-width:4px;
-    background:#fff;
+<style>
+  :root {
+    --bg-base:    #080c14;
+    --bg-card:    #0d1220;
+    --bg-card2:   #111827;
+    --border:     #1e2d45;
+    --accent:     #38bdf8;
+    --accent-dim: #0c3a56;
+    --text-1:     #e2eaf5;
+    --text-2:     #6b8aad;
+    --green:      #22c55e;
+    --yellow:     #eab308;
+    --red:        #ef4444;
+    --orange:     #f97316;
   }
-  .dark .card{ background:#1f2937 }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; }
+
+  html, body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg-base);
+    color: var(--text-1);
+    min-height: 100vh;
+  }
+
+  /* ─── SCANLINE / GRID BG ─── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(56,189,248,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56,189,248,.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    position: relative; z-index: 10;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 1.5rem;
+    background: rgba(8,12,20,.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 1px 30px rgba(56,189,248,.06);
+  }
+
+  .logo-wrap {
+    display: flex; align-items: center; gap: .75rem;
+  }
+  .logo-wrap img {
+    height: 2rem; width: 2rem; object-fit: contain;
+    filter: drop-shadow(0 0 6px var(--accent));
+  }
+  .logo-wrap h1 {
+    font-size: 1.1rem; font-weight: 800; letter-spacing: .08em;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, var(--accent), #818cf8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  #lastUpdated {
+    font-family: 'Space Mono', monospace;
+    font-size: .65rem; color: var(--text-2); margin-top: .25rem;
+    letter-spacing: .04em;
+  }
+
+  /* ─── HEADER BUTTONS ─── */
+  .hdr-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2.25rem; height: 2.25rem; border-radius: .5rem;
+    border: 1px solid var(--border);
+    background: var(--bg-card2);
+    cursor: pointer; font-size: 1rem;
+    transition: all .2s;
+  }
+  .hdr-btn:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(56,189,248,.35);
+    transform: scale(1.08);
+  }
+
+  /* ─── CLIMATE BANNER ─── */
+  #climateBanner {
+    position: relative; z-index: 5;
+    margin: 1.25rem 1.5rem .5rem;
+    padding: .75rem 1.5rem;
+    border-radius: .75rem;
+    font-family: 'Space Mono', monospace;
+    font-size: .9rem; font-weight: 700;
+    letter-spacing: .1em; text-align: center;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    overflow: hidden;
+    animation: fadeSlideDown .5s ease both;
+  }
+  #climateBanner::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: inherit; filter: blur(24px);
+    opacity: .25; border-radius: inherit;
+  }
+
+  /* ─── REGIME SECTION ─── */
+  .regime-section {
+    position: relative; z-index: 5;
+    margin: .75rem 1.5rem;
+    padding: 1.25rem;
+    border-radius: 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    text-align: center;
+    animation: fadeSlideDown .55s ease both;
+  }
+  #regimeHeader {
+    display: inline-block;
+    margin-bottom: .75rem;
+    padding: .4rem 1.5rem;
+    border-radius: 999px;
+    font-family: 'Space Mono', monospace;
+    font-size: .8rem; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase;
+    background: #1e293b; color: var(--text-1);
+    border: 1px solid var(--border);
+    transition: background .4s, box-shadow .4s;
+  }
+  #regimeUpdated {
+    font-family: 'Space Mono', monospace;
+    font-size: .65rem; color: var(--text-2);
+    margin-top: .4rem; letter-spacing: .04em;
+  }
+
+  /* ─── GAUGE NEEDLE TRANSITION ─── */
+  #needle { transition: transform .7s cubic-bezier(.34,1.56,.64,1); }
+
+  /* ─── MACRO CARDS GRID ─── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: .75rem;
+    padding: 0 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .card {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid transparent;
+    border-radius: .875rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    overflow: hidden;
+    transition: transform .2s, box-shadow .2s, border-left-color .3s;
+    animation: fadeScaleIn .4s ease both;
+    cursor: default;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(56,189,248,.1);
+  }
+  .card::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(56,189,248,.03), transparent 60%);
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  .card-label {
+    font-size: .65rem;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--text-2);
+  }
+  .card-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.05rem; font-weight: 700;
+    color: var(--text-1);
+    letter-spacing: .03em;
+  }
+  .card-pct {
+    font-family: 'Space Mono', monospace;
+    font-size: .7rem; color: var(--text-2);
+  }
+
+  /* ─── SECTION LABEL ─── */
+  .section-label {
+    font-size: .7rem; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: var(--text-2);
+    padding: 1.5rem 1.5rem .5rem;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .section-label::after {
+    content: ''; flex: 1;
+    height: 1px; background: var(--border);
+  }
+
+  /* ─── NEWS ─── */
+  .news-wrap {
+    position: relative; z-index: 5;
+    margin: 0 1.5rem 2rem;
+    border-radius: 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .news-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: .875rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .news-title {
+    font-size: .85rem; font-weight: 700;
+    letter-spacing: .06em; text-transform: uppercase;
+  }
+
+  .news-tabs {
+    display: flex;
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: .5rem; padding: .2rem; gap: .2rem;
+  }
+  .news-tab {
+    font-family: 'Space Mono', monospace;
+    font-size: .65rem; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    padding: .3rem .85rem;
+    border-radius: .35rem;
+    border: none; cursor: pointer;
+    background: transparent; color: var(--text-2);
+    transition: all .2s;
+  }
+  .news-tab.active {
+    background: var(--accent);
+    color: #080c14;
+    box-shadow: 0 0 12px rgba(56,189,248,.45);
+  }
+
+  #newsList {
+    max-height: 22rem; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+  #newsList .news-item {
+    padding: .75rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: .82rem; line-height: 1.5;
+    transition: background .15s;
+  }
+  #newsList .news-item:last-child { border-bottom: none; }
+  #newsList .news-item:hover { background: rgba(56,189,248,.04); }
+  #newsList .news-item a {
+    color: var(--text-1); text-decoration: none;
+    transition: color .15s;
+  }
+  #newsList .news-item a:hover { color: var(--accent); }
+
+  /* ─── LIGHT MODE OVERRIDES ─── */
+  html:not(.dark) {
+    --bg-base:    #f0f4f8;
+    --bg-card:    #ffffff;
+    --bg-card2:   #e9eef5;
+    --border:     #d0dae8;
+    --text-1:     #0f172a;
+    --text-2:     #5a7a9e;
+    --accent-dim: #bae6fd;
+  }
+  html:not(.dark) body { background: var(--bg-base); }
+  html:not(.dark) .logo-wrap h1 {
+    background: linear-gradient(90deg, #0284c7, #6366f1);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  html:not(.dark) body::before {
+    background-image:
+      linear-gradient(rgba(2,132,199,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(2,132,199,.04) 1px, transparent 1px);
+  }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeSlideDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeScaleIn {
+    from { opacity: 0; transform: scale(.94); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 rgba(56,189,248,0); }
+    50%       { box-shadow: 0 0 18px rgba(56,189,248,.25); }
+  }
+
+  /* stagger cards */
+  .card:nth-child(1) { animation-delay: .04s }
+  .card:nth-child(2) { animation-delay: .09s }
+  .card:nth-child(3) { animation-delay: .13s }
+  .card:nth-child(4) { animation-delay: .17s }
+  .card:nth-child(5) { animation-delay: .21s }
+  .card:nth-child(6) { animation-delay: .25s }
+  .card:nth-child(7) { animation-delay: .29s }
+
+  /* refresh spin */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinning { animation: spin .7s linear infinite; }
+
+  iframe { max-width: 100%; }
 </style>
 </head>
 
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+<body>
 
 <!-- HEADER -->
-<header class="flex justify-between p-4 bg-gray-200 dark:bg-gray-800">
+<header>
   <div>
-    <div class="flex items-center gap-3">
-      <img src="logo.png" class="h-8 w-8 object-contain" />
-      <h1 class="text-xl font-semibold">Macro Dashboard</h1>
+    <div class="logo-wrap">
+      <img src="logo.png" />
+      <h1>Macro Dashboard</h1>
     </div>
-    <div id="lastUpdated" class="text-xs opacity-70 mt-1">
-      Last updated: --
-    </div>
+    <div id="lastUpdated">Last updated: --</div>
   </div>
-  <div class="space-x-2">
-    <button id="refreshBtn" class="bg-blue-600 text-white px-3 py-1 rounded">🔄</button>
-    <button id="themeToggle" class="bg-gray-300 dark:bg-gray-700 px-3 py-1 rounded">🌙</button>
+  <div style="display:flex;gap:.5rem">
+    <button id="refreshBtn" class="hdr-btn" title="Refresh">🔄</button>
+    <button id="themeToggle" class="hdr-btn" title="Toggle theme">🌙</button>
   </div>
 </header>
 
 <!-- MARKET CLIMATE -->
-<section id="climateBanner"
-  class="m-4 p-4 rounded-xl text-center font-semibold text-lg">
-  Market Climate: --
-</section>
+<section id="climateBanner">Market Climate: --</section>
 
-<!-- REGIME INLINE -->
-  <!-- TREND REGIME -->
-<section class="mx-4 mt-3 p-4 rounded-xl bg-white dark:bg-slate-800 text-center">
+<!-- TREND REGIME -->
+<section class="regime-section">
 
-  <div id="regimeHeader"
-       class="mb-3 px-4 py-2 rounded-xl font-semibold text-lg bg-gray-700 dark:bg-slate-700 text-white">
-    Trend : --
-  </div>
+  <div id="regimeHeader">Trend : --</div>
 
-  <svg viewBox="0 0 200 110" class="mx-auto max-w-[420px]">
+  <svg viewBox="0 0 200 110" class="mx-auto" style="max-width:380px;display:block">
+    <!-- Arc glow defs -->
+    <defs>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+        <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
 
-    <!-- 180° ARC – PERFECTLY SPLIT -->
+    <!-- Track -->
+    <path d="M 20 100 A 80 80 0 0 1 180 100"
+      stroke="#1e2d45" stroke-width="14" fill="none" stroke-linecap="round"/>
 
-<!-- RED (180° → 120°) -->
-<path d="
-  M 20 100
-  A 80 80 0 0 1 60 30
-"
-stroke="#ef4444" stroke-width="14" fill="none"/>
+    <!-- RED -->
+    <path d="M 20 100 A 80 80 0 0 1 60 30"
+      stroke="#ef4444" stroke-width="14" fill="none" filter="url(#glow)"/>
+    <!-- YELLOW -->
+    <path d="M 60 30 A 80 80 0 0 1 140 30"
+      stroke="#eab308" stroke-width="14" fill="none" filter="url(#glow)"/>
+    <!-- GREEN -->
+    <path d="M 140 30 A 80 80 0 0 1 180 100"
+      stroke="#22c55e" stroke-width="14" fill="none" filter="url(#glow)"/>
 
-<!-- YELLOW (120° → 60°) -->
-<path d="
-  M 60 30
-  A 80 80 0 0 1 140 30
-"
-stroke="#facc15" stroke-width="14" fill="none"/>
-
-<!-- GREEN (60° → 0°) -->
-<path d="
-  M 140 30
-  A 80 80 0 0 1 180 100
-"
-stroke="#16a34a" stroke-width="14" fill="none"/>
-
-    <!-- EMA boundary labels (polar placement) -->
-
-<!-- EMA labels (180° gauge – boundary-accurate & closer to arc) -->
-
-<!-- 200 EMA (Red → Yellow boundary @ -30°) -->
-<text
-  x="74"
-  y="54"
-  font-size="13"
-  fill="#e5e7eb"
-  text-anchor="middle"
-  dominant-baseline="middle"
-  transform="rotate(-30 74 54)">
-  200
-</text>
-
-<!-- 50 EMA (Yellow → Green boundary @ +30°) -->
-<text
-  x="126"
-  y="54"
-  font-size="13"
-  fill="#e5e7eb"
-  text-anchor="middle"
-  dominant-baseline="middle"
-  transform="rotate(30 126 54)">
-  50
-</text>
+    <!-- Labels -->
+    <text x="74" y="54" font-size="11" fill="#94a3b8"
+      text-anchor="middle" dominant-baseline="middle"
+      font-family="Space Mono, monospace"
+      transform="rotate(-30 74 54)">200</text>
+    <text x="126" y="54" font-size="11" fill="#94a3b8"
+      text-anchor="middle" dominant-baseline="middle"
+      font-family="Space Mono, monospace"
+      transform="rotate(30 126 54)">50</text>
 
     <!-- NEEDLE -->
     <g id="needle" transform="rotate(-30 100 100)">
-      <line x1="100" y1="100" x2="100" y2="55"
-            stroke="#111827" stroke-width="7"
-            stroke-linecap="round"/>
-      <line x1="100" y1="100" x2="100" y2="55"
-            stroke="#f9fafb" stroke-width="4"
-            stroke-linecap="round"/>
+      <line x1="100" y1="100" x2="100" y2="57"
+        stroke="rgba(8,12,20,.6)" stroke-width="6" stroke-linecap="round"/>
+      <line x1="100" y1="100" x2="100" y2="57"
+        stroke="#e2eaf5" stroke-width="3" stroke-linecap="round"/>
     </g>
 
-    <!-- PIVOT -->
-    <circle cx="100" cy="100" r="7" fill="#111827"/>
-    <circle cx="100" cy="100" r="5" fill="#f9fafb"/>
-
+    <!-- Pivot -->
+    <circle cx="100" cy="100" r="7" fill="#080c14"/>
+    <circle cx="100" cy="100" r="4.5" fill="#38bdf8"/>
+    <circle cx="100" cy="100" r="2" fill="#e2eaf5"/>
   </svg>
 
-  <div class="font-semibold mt-1 text-gray-700 dark:text-gray-200">
-    EMA
-  </div>
+  <div style="font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--text-2);margin-top:.5rem">EMA</div>
+  <div id="regimeUpdated" style="font-family:'Space Mono',monospace;font-size:.62rem;
+    color:var(--text-2);margin-top:.2rem;letter-spacing:.04em">As of: --</div>
 
-  <div id="regimeUpdated" class="text-xs opacity-70 mt-1">
-    As of: --
-  </div>
 </section>
-
 
 <!-- MACRO CARDS -->
-<main class="p-4 space-y-10">
-
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
-  <div id="dxyCard" class="card"><div>DXY</div><div><div id="dxy">--</div><div id="dxyPct" class="text-sm opacity-70"></div></div></div>
-  <div id="jpyCard" class="card"><div>USD / JPY</div><div><div id="usdjpy">--</div><div id="usdjpyPct" class="text-sm opacity-70"></div></div></div>
-  <div id="inrCard" class="card"><div>USD / INR</div><div><div id="usdinr">--</div><div id="usdinrPct" class="text-sm opacity-70"></div></div></div>
-  <div id="crudeCard" class="card"><div>Brent</div><div><div id="crude">--</div><div id="crudePct" class="text-sm opacity-70"></div></div></div>
-  <div id="us10yCard" class="card"><div>US 10Y</div><div><div id="us10y">--</div><div id="us10yPct" class="text-sm opacity-70"></div></div></div>
-  <div id="us2yCard" class="card"><div>US 2Y</div><div><div id="us2y">--</div><div id="us2yPct" class="text-sm opacity-70"></div></div></div>
-  <div id="spreadCard" class="card"><div>Yield Spread</div><div><div id="spread">--</div></div></div>
-</section>
+<div class="section-label">Market Indicators</div>
+<div class="cards-grid">
+  <div id="dxyCard"    class="card"><div class="card-label">DXY</div><div class="card-value" id="dxy">--</div><div class="card-pct" id="dxyPct"></div></div>
+  <div id="jpyCard"    class="card"><div class="card-label">USD / JPY</div><div class="card-value" id="usdjpy">--</div><div class="card-pct" id="usdjpyPct"></div></div>
+  <div id="inrCard"    class="card"><div class="card-label">USD / INR</div><div class="card-value" id="usdinr">--</div><div class="card-pct" id="usdinrPct"></div></div>
+  <div id="crudeCard"  class="card"><div class="card-label">Brent</div><div class="card-value" id="crude">--</div><div class="card-pct" id="crudePct"></div></div>
+  <div id="us10yCard"  class="card"><div class="card-label">US 10Y</div><div class="card-value" id="us10y">--</div><div class="card-pct" id="us10yPct"></div></div>
+  <div id="us2yCard"   class="card"><div class="card-label">US 2Y</div><div class="card-value" id="us2y">--</div><div class="card-pct" id="us2yPct"></div></div>
+  <div id="spreadCard" class="card"><div class="card-label">Yield Spread</div><div class="card-value" id="spread">--</div></div>
+</div>
 
 <!-- NEWS -->
-<section class="m-4 mt-10">
-  <div class="flex justify-between items-center mb-3">
-    <h2 class="text-lg font-semibold">📰 Market News</h2>
-    <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1 text-xs">
-      <button id="globalNewsBtn" class="px-3 py-1 rounded-md bg-blue-600 text-white">Global</button>
-      <button id="indiaNewsBtn" class="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200">India</button>
+<div class="section-label" style="margin-top:1.75rem">Market News</div>
+<div class="news-wrap">
+  <div class="news-header">
+    <span class="news-title">📰 Latest</span>
+    <div class="news-tabs">
+      <button id="globalNewsBtn" class="news-tab active">Global</button>
+      <button id="indiaNewsBtn"  class="news-tab">India</button>
     </div>
   </div>
-
-  <div class="rounded-xl border bg-white dark:bg-gray-800">
-    <div id="newsList"
-      class="max-h-96 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-      <div class="p-3 opacity-60">Loading news…</div>
-    </div>
+  <div id="newsList">
+    <div class="news-item" style="opacity:.5">Loading news…</div>
   </div>
-</section>
-
-</main>
+</div>
 
 <script>
 const API="https://macro-dashboard-vk03.onrender.com";
@@ -241,14 +499,19 @@ async function load(){
 
   if(stress<=1){
     climateBanner.innerText="🌤️ Market Climate: Favorable";
-    climateBanner.style.background="#16a34a";
+    climateBanner.style.background="rgba(22,163,74,.18)";
+    climateBanner.style.borderColor="#16a34a";
+    climateBanner.style.color="#4ade80";
   }else if(stress<=3){
     climateBanner.innerText="🌥️ Market Climate: Cautious";
-    climateBanner.style.background="#facc15";
-    climateBanner.style.color="black";
+    climateBanner.style.background="rgba(234,179,8,.15)";
+    climateBanner.style.borderColor="#eab308";
+    climateBanner.style.color="#fde047";
   }else{
     climateBanner.innerText="🌩️ Market Climate: Stressed";
-    climateBanner.style.background="#dc2626";
+    climateBanner.style.background="rgba(220,38,38,.18)";
+    climateBanner.style.borderColor="#dc2626";
+    climateBanner.style.color="#f87171";
   }
 
   $("lastUpdated").innerText="Last updated: "+new Date().toLocaleString();
@@ -259,70 +522,75 @@ let currentNews="global";
 async function loadNews(region){
   currentNews=region;
   const box=$("newsList");
-  box.innerHTML="<div class='p-3 opacity-60'>Loading news…</div>";
+  box.innerHTML="<div class='news-item' style='opacity:.5'>Loading news…</div>";
   try{
     const r=await fetch(`${API}/news?region=${region}`);
     const d=await r.json();
     box.innerHTML="";
     d.items.forEach(n=>{
       const div=document.createElement("div");
-      div.className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700";
+      div.className="news-item";
       div.innerHTML=`<a href="${n.link}" target="_blank">${n.title}</a>`;
       box.appendChild(div);
     });
   }catch{
-    box.innerHTML="<div class='p-3 text-red-500'>Failed to load news</div>";
+    box.innerHTML="<div class='news-item' style='color:#ef4444'>Failed to load news</div>";
   }
 }
 
-globalNewsBtn.onclick=()=>{globalNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
-  indiaNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";
-  loadNews("global");};
-
-indiaNewsBtn.onclick=()=>{indiaNewsBtn.className="px-3 py-1 rounded-md bg-blue-600 text-white";
-  globalNewsBtn.className="px-3 py-1 rounded-md text-gray-700 dark:text-gray-200";
-  loadNews("india");};
+globalNewsBtn.onclick=()=>{
+  globalNewsBtn.classList.add("active");
+  indiaNewsBtn.classList.remove("active");
+  loadNews("global");
+};
+indiaNewsBtn.onclick=()=>{
+  indiaNewsBtn.classList.add("active");
+  globalNewsBtn.classList.remove("active");
+  loadNews("india");
+};
 
 async function loadRegime(){
   const d = await j("/market-regime");
   if(!d) return;
 
-  // Needle logic (unchanged, correct)
   let pct = ((d.close - d.ema200) / d.ema200) * 100;
   pct = Math.max(-2, Math.min(2, pct));
   const angle = -30 + (pct / 2) * 60;
 
-  $("needle").setAttribute(
-    "transform",
-    `rotate(${angle} 100 100)`
-  );
+  $("needle").setAttribute("transform", `rotate(${angle} 100 100)`);
 
   const header = $("regimeHeader");
-  header.className =
-    "mb-3 px-4 py-2 rounded-full font-semibold text-lg text-black";
-
   header.innerText = `Trend : ${d.trend_regime}`;
 
   const r = d.trend_regime.toLowerCase();
   if(r === "bullish"){
-    header.style.background = "#16a34a";
-    header.style.color = "white";
+    header.style.background = "rgba(22,163,74,.2)";
+    header.style.borderColor = "#16a34a";
+    header.style.color = "#4ade80";
   }else if(r === "bearish"){
-    header.style.background = "#dc2626";
-    header.style.color = "white";
+    header.style.background = "rgba(220,38,38,.2)";
+    header.style.borderColor = "#dc2626";
+    header.style.color = "#f87171";
   }else if(r === "correction" || r === "corrective"){
-    header.style.background = "#facc15";
-    header.style.color = "#1f2937";
+    header.style.background = "rgba(234,179,8,.15)";
+    header.style.borderColor = "#eab308";
+    header.style.color = "#fde047";
   }else{
-    header.style.background = "#334155";
-    header.style.color = "white";
+    header.style.background = "rgba(30,41,59,.6)";
+    header.style.borderColor = "#334155";
+    header.style.color = "#94a3b8";
   }
 
   $("regimeUpdated").innerText =
     d.as_of ? "As of: " + d.as_of : "As of: Previous close";
 }
 
-refreshBtn.onclick=()=>{ load(); loadNews(currentNews); loadRegime(); };
+// refresh with spin animation
+refreshBtn.onclick=()=>{
+  refreshBtn.classList.add("spinning");
+  setTimeout(()=>refreshBtn.classList.remove("spinning"), 700);
+  load(); loadNews(currentNews); loadRegime();
+};
 
 load();
 loadNews("global");
@@ -352,7 +620,7 @@ function sendHeight() {
   const h =
     document.documentElement.scrollHeight ||
     document.body.scrollHeight ||
-    280; // fallback
+    280;
 
   window.parent.postMessage(
     { type: "REGIME_HEIGHT", height: h },
@@ -360,7 +628,6 @@ function sendHeight() {
   );
 }
 
-// Fire multiple times to catch SVG + fonts
 window.addEventListener("load", sendHeight);
 setTimeout(sendHeight, 100);
 setTimeout(sendHeight, 300);
