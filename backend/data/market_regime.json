@@ -1,9 +1,9 @@
 {
   "index": "NIFTY 50",
   "trend_regime": "Bearish",
-  "close": 24353.55,
-  "ema50": 24200.79,
-  "ema200": 24820.9,
-  "as_of": "2026-04-17",
+  "close": 24364.85,
+  "ema50": 24207.22,
+  "ema200": 24816.37,
+  "as_of": "2026-04-20",
   "based_on": "Previous daily close"
 }
